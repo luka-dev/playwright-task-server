@@ -1,10 +1,11 @@
-import * as playwright from "playwright";
 import {ChromiumBrowser, FirefoxBrowser, WebKitBrowser} from "playwright";
+import {chromium, firefox, webkit} from "playwright";
 import {Task} from "./Task";
 
 
 export default class BrowsersPool {
 
+    private browsersList: any = {};
     private browser: ChromiumBrowser|FirefoxBrowser|WebKitBrowser|null = null;
 
     private defaultBrowserOptions: object = {};
@@ -13,9 +14,17 @@ export default class BrowsersPool {
 
     private maxWorkers: number|null;
 
-    private tasker: () => void = (async () => {});
+    private tasker: NodeJS.Timeout|null = null;
 
     public constructor(args: string[], maxWorkers: number|null, headless: boolean = true, slowMo: number = 0, browser: string = 'chromium') {
+
+        // @ts-ignore
+        this.browsersList['chromium'] = chromium;
+        // @ts-ignore
+        this.browsersList['firefox'] = firefox;
+        // @ts-ignore
+        this.browsersList['webkit'] = webkit;
+
         this.browser = null;
         this.tasksPool = [];
         this.maxWorkers = maxWorkers;
@@ -28,10 +37,8 @@ export default class BrowsersPool {
 
         if (browser === 'chromium' || browser === 'firefox' || browser === 'webkit') {
             (async () => {
-                this.browser = await playwright[browser].launch();
+                this.browser = await this.browsersList[browser].launch();
             })();
-
-            this.runTasker();
         }
         else {
             console.log(`Wrong browser type: ${browser}`);
@@ -41,13 +48,15 @@ export default class BrowsersPool {
     }
 
     public runTasker(): void {
-        this.tasker = (async () => {
+        this.tasker = setInterval(() => {
             console.log('tasker');
-        });
+        }, 10);
     }
 
     public stopTasker(): void {
-        this.tasker = (async () => {});
+        if (this.tasker) {
+            clearInterval(this.tasker);
+        }
     }
 
     public setDefaultBrowserOptions(options: object) {

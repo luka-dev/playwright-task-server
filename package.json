@@ -1,5 +1,5 @@
 {
-  "name": "auto-termine-nuernberg-de",
+  "name": "playwright-task-server",
   "version": "1.0.0",
   "description": "",
   "main": "build/index.js",
@@ -11,14 +11,14 @@
   },
   "repository": {
     "type": "git",
-    "url": "git+https://github.com/luka-dev/auto-termine-nuernberg-de.git"
+    "url": "git+https://github.com/luka-dev/playwright-task-server.git"
   },
   "author": "LuKa",
   "license": "ISC",
   "bugs": {
-    "url": "https://github.com/luka-dev/auto-termine-nuernberg-de/issues"
+    "url": "https://github.com/luka-dev/playwright-task-server/issues"
   },
-  "homepage": "https://github.com/luka-dev/auto-termine-nuernberg-de#readme",
+  "homepage": "https://github.com/luka-dev/playwright-task-server#readme",
   "devDependencies": {
     "@types/cors": "^2.8.6",
     "@types/debug": "^4.1.5",

@@ -3,13 +3,11 @@ import {WebServer} from "./WebServer";
 import BrowsersPool from "./BrowsersPool";
 
 const browsersPool = new BrowsersPool(config.RUN_OPTIONS.args, config.RUN_OPTIONS.MAX_WORKERS);
-
 browsersPool.runTasker();
 
 
 const webServer = new WebServer(config.SERVER_PORT);
 
-browsersPool.stopTasker();
 // webServer.setAuthKey(config.AUTH_KEY);
 
 webServer.get('/', (request, response) => {
