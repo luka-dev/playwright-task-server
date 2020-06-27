@@ -3,12 +3,11 @@ import {WebServer} from "./WebServer";
 import BrowsersPool from "./BrowsersPool";
 
 const browsersPool = new BrowsersPool(config.RUN_OPTIONS.args, config.RUN_OPTIONS.MAX_WORKERS);
-browsersPool.runTasker();
-
+browsersPool.runTaskManager();
 
 const webServer = new WebServer(config.SERVER_PORT);
 
-// webServer.setAuthKey(config.AUTH_KEY);
+webServer.setAuthKey(config.AUTH_KEY);
 
 webServer.get('/', (request, response) => {
   response.json({
@@ -41,7 +40,7 @@ webServer.get('/stats', (request, response) => {
 });
 
 webServer.post('/task', (request, response) => {
-
+    browsersPool.addTask()
 })
 
 webServer.start();

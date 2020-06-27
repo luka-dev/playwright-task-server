@@ -7,16 +7,14 @@ export default class BrowsersPool {
 
     private browsersList: any = {};
     private browser: ChromiumBrowser|FirefoxBrowser|WebKitBrowser|null = null;
-
     private defaultBrowserOptions: object = {};
 
-    private tasksPool: Task[] = [];
+    private readonly maxWorkers: number|null;
 
-    private maxWorkers: number|null;
+    private tasksQueue: Task[] = [];
+    private taskManager: NodeJS.Timeout|null = null;
 
-    private tasker: NodeJS.Timeout|null = null;
-
-    public constructor(args: string[], maxWorkers: number|null, headless: boolean = true, slowMo: number = 0, browser: string = 'chromium') {
+    public constructor(args: string[], maxWorkers: number|null, browser: string = 'chromium', headless: boolean = true, slowMo: number = 0,) {
 
         // @ts-ignore
         this.browsersList['chromium'] = chromium;
@@ -26,7 +24,7 @@ export default class BrowsersPool {
         this.browsersList['webkit'] = webkit;
 
         this.browser = null;
-        this.tasksPool = [];
+        this.tasksQueue = [];
         this.maxWorkers = maxWorkers;
 
         if (typeof this.maxWorkers === "number" && this.maxWorkers < 1) {
@@ -47,15 +45,16 @@ export default class BrowsersPool {
         }
     }
 
-    public runTasker(): void {
-        this.tasker = setInterval(() => {
-            console.log('tasker');
+    public runTaskManager(): void {
+        this.taskManager = setInterval(() => {
+
         }, 10);
     }
 
-    public stopTasker(): void {
-        if (this.tasker) {
-            clearInterval(this.tasker);
+    public stopTaskManager(): void {
+        if (this.taskManager !== null) {
+            clearInterval(this.taskManager);
+            this.taskManager = null;
         }
     }
 
@@ -67,12 +66,12 @@ export default class BrowsersPool {
         return this.defaultBrowserOptions;
     }
 
-    public addTask(script: string, options: object|null) {
+    public addTask(script: string, callback: (responseArray: object) => void,  options: object|null = null) {
         if (options === null) {
             options = this.getDefaultBrowserOptions();
         }
 
-        this.tasksPool.push(new Task(script, options));
+        this.tasksQueue.push(new Task(script, options));
     }
 
 
