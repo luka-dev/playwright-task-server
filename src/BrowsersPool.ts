@@ -1,6 +1,6 @@
 import {ChromiumBrowser, FirefoxBrowser, WebKitBrowser} from "playwright";
 import {chromium, firefox, webkit} from "playwright";
-import {Task} from "./Task";
+import Task, {TaskTimes} from "./Task";
 
 
 export default class BrowsersPool {
@@ -31,6 +31,11 @@ export default class BrowsersPool {
             console.log(`Wrong maxWorkers: ${this.maxWorkers}`);
             console.log(`Dying`);
             process.exit(1);
+        }
+        else if (this.maxWorkers === null) {
+            //Get CPU's cores count
+            this.maxWorkers = 12;
+            //
         }
 
         if (browser === 'chromium' || browser === 'firefox' || browser === 'webkit') {
@@ -66,12 +71,12 @@ export default class BrowsersPool {
         return this.defaultBrowserOptions;
     }
 
-    public addTask(script: string, callback: (responseArray: object) => void,  options: object|null = null) {
+    public addTask(script: string, callback: (scriptStatus: string, scriptReturn: object, times: TaskTimes) => void,  options: object|null = null) {
         if (options === null) {
             options = this.getDefaultBrowserOptions();
         }
 
-        this.tasksQueue.push(new Task(script, options));
+        this.tasksQueue.push(new Task(script, callback, options));
     }
 
 

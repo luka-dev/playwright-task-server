@@ -39,8 +39,19 @@ webServer.get('/stats', (request, response) => {
   })
 });
 
-webServer.post('/task', (request, response) => {
-    browsersPool.addTask()
+webServer.post(`/task`, (request, response) => {
+    browsersPool.addTask('HERE_SHOULD_BE_SCRIPT', (scriptStatus: string, scriptReturn = {}, times) => {
+        times.done_at = (new Date).getTime();
+        response.json({
+            status: scriptStatus,
+            stats: {
+                ...times
+            },
+            data: {
+                ...scriptReturn
+            }
+        });
+    });
 })
 
 webServer.start();
