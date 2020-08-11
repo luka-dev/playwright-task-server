@@ -1,5 +1,4 @@
 import express, {Express, Request, Response} from "express";
-import bodyParser from "body-parser";
 import helmet from "helmet";
 import cors from "cors";
 import http from "http";
@@ -29,8 +28,8 @@ export class WebServer {
         }
 
         this.app.use(express.json());
-        this.app.use(bodyParser.urlencoded({extended: false}));
-        this.app.use(bodyParser.json());
+        this.app.use(express.json());
+        this.app.use(express.urlencoded());
     }
 
     public setAuthKey(key: string | null = null): void {

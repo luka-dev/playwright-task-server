@@ -1,7 +1,13 @@
 import {ChromiumBrowser, FirefoxBrowser, WebKitBrowser} from "playwright";
 import {chromium, firefox, webkit} from "playwright";
-import Task, {TaskTimes} from "./Task";
+import Task, {TaskTimes, DONE as TaskDONE, FAIL as TaskFAIL} from "./Task";
+import {BrowserContext} from "playwright/index";
 
+interface InlineOptions {
+    args: string[],
+    headless: boolean,
+    slowMo: number
+}
 
 export default class BrowsersPool {
 
@@ -14,7 +20,7 @@ export default class BrowsersPool {
     private tasksQueue: Task[] = [];
     private taskManager: NodeJS.Timeout|null = null;
 
-    public constructor(args: string[], maxWorkers: number|null, browser: string = 'chromium', headless: boolean = true, slowMo: number = 0,) {
+    public constructor(options: InlineOptions, maxWorkers: number|null, browser: string = 'chromium') {
 
         // @ts-ignore
         this.browsersList['chromium'] = chromium;
@@ -35,12 +41,12 @@ export default class BrowsersPool {
         else if (this.maxWorkers === null) {
             //Get CPU's cores count
             this.maxWorkers = 12;
-            //
+            //todo get cpu count dynamic
         }
 
         if (browser === 'chromium' || browser === 'firefox' || browser === 'webkit') {
             (async () => {
-                this.browser = await this.browsersList[browser].launch();
+                this.browser = await this.browsersList[browser].launch(options);
             })();
         }
         else {
@@ -51,8 +57,43 @@ export default class BrowsersPool {
     }
 
     public runTaskManager(): void {
-        this.taskManager = setInterval(() => {
+        this.taskManager = setInterval( () => {
+            if (this.tasksQueue.length)
+            {
+                let task: Task = this.tasksQueue[0]; //take first task
+                this.tasksQueue.shift();
+                task.setRunTime((new Date()).getTime());
 
+                try {
+                    let script = new Function(`(async () => {
+                        let task = arguments[0];
+                        let newContext = arguments[1];
+                        try {
+                            let data = {};
+                            let context = await newContext();
+                            ${task.getScript()}
+                            if (context !== null && typeof context.close === 'function') {
+                                context.close();
+                            }
+                            task.getCallback()('DONE', data, task.getTaskTime());
+                        }
+                        catch (e) {
+                            if (context !== null && typeof context.close === 'function') {
+                                context.close();
+                            }
+                            task.getCallback()('FAIL', {}, task.getTaskTime());
+                        }
+                    })()`);
+
+                    // @ts-ignore
+                    script.call(this, task, this.browser.newContext);
+                }
+                catch (e) {
+                    console.warn(e);
+                    task.getCallback()(TaskFAIL, {}, task.getTaskTime());
+                }
+
+            }
         }, 10);
     }
 
@@ -78,8 +119,5 @@ export default class BrowsersPool {
 
         this.tasksQueue.push(new Task(script, callback, options));
     }
-
-
-
 
 }
