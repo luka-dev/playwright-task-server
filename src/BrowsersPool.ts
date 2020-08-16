@@ -1,7 +1,7 @@
 import {ChromiumBrowser, FirefoxBrowser, WebKitBrowser} from "playwright";
 import {chromium, firefox, webkit} from "playwright";
 import Task, {TaskTimes, DONE as TaskDONE, FAIL as TaskFAIL} from "./Task";
-import {BrowserContext} from "playwright/index";
+import URL from "url";
 
 interface InlineOptions {
     args: string[],
@@ -65,32 +65,38 @@ export default class BrowsersPool {
                 task.setRunTime((new Date()).getTime());
 
                 try {
+                    let modules = {
+                        URL: URL
+                    };
+
+                    console.log(URL);
+
                     let script = new Function(`(async () => {
-                        let task = arguments[0];
-                        let newContext = arguments[1];
-                        try {
-                            let data = {};
-                            let context = await newContext();
-                            ${task.getScript()}
-                            if (context !== null && typeof context.close === 'function') {
-                                context.close();
-                            }
-                            task.getCallback()('DONE', data, task.getTaskTime());
-                        }
-                        catch (e) {
-                            if (context !== null && typeof context.close === 'function') {
-                                context.close();
-                            }
-                            task.getCallback()('FAIL', {}, task.getTaskTime());
-                        }
+                            let context = await this.browser.newContext();
+                            
+                            (async function (task, context, TaskDONE, TaskFAIL, modules) {
+                                try {
+                                    let data = {};
+                                    ${task.getScript()}
+                                    if (context !== null && typeof context.close === 'function') {
+                                        context.close();
+                                    }
+                                    task.getCallback()(TaskDONE, data, task.getTaskTime());
+                                }
+                                catch (e) {
+                                    if (context !== null && typeof context.close === 'function') {
+                                        context.close();
+                                    }
+                                    task.getCallback()(TaskFAIL, {'error': 'Fail in script running', 'log': e.toString()}, task.getTaskTime());
+                                }
+                            })(arguments[0], context, arguments[1], arguments[2], arguments[3]);
                     })()`);
 
                     // @ts-ignore
-                    script.call(this, task, this.browser.newContext);
+                    script.call(this, task, TaskDONE, TaskFAIL, modules);
                 }
                 catch (e) {
-                    console.warn(e);
-                    task.getCallback()(TaskFAIL, {}, task.getTaskTime());
+                    task.getCallback()(TaskFAIL, {'error': 'Fail in script calling', 'log': e.toString()}, task.getTaskTime());
                 }
 
             }
