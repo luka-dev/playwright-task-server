@@ -2,6 +2,7 @@ import {ChromiumBrowser, FirefoxBrowser, WebKitBrowser} from "playwright";
 import {chromium, firefox, webkit} from "playwright";
 import Task, {TaskTimes, DONE as TaskDONE, FAIL as TaskFAIL} from "./Task";
 import URL from "url";
+import {promiseSafeSync} from "./Utils";
 
 interface InlineOptions {
     args: string[],
@@ -66,10 +67,9 @@ export default class BrowsersPool {
 
                 try {
                     let modules = {
-                        URL: URL
+                        URL: URL,
+                        pss: promiseSafeSync
                     };
-
-                    console.log(URL);
 
                     let script = new Function(`(async () => {
                             let context = await this.browser.newContext();
