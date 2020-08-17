@@ -21,6 +21,13 @@ export default class BrowsersPool {
     private tasksQueue: Task[] = [];
     private taskManager: NodeJS.Timeout|null = null;
 
+    private contextsCounter: number = 0
+    
+    private modules = {
+        URL: URL,
+        pss: promiseSafeSync
+    };
+
     public constructor(options: InlineOptions, maxWorkers: number|null, browser: string = 'chromium') {
 
         // @ts-ignore
@@ -59,21 +66,18 @@ export default class BrowsersPool {
 
     public runTaskManager(): void {
         this.taskManager = setInterval( () => {
-            if (this.tasksQueue.length)
+
+            //todo load balancer 12 contexts per core
+            let task: Task;
+            // @ts-ignore
+            if (this.tasksQueue.length && (task = this.tasksQueue.shift()) && task !== undefined)
             {
-                let task: Task = this.tasksQueue[0]; //take first task
-                this.tasksQueue.shift();
                 task.setRunTime((new Date()).getTime());
 
                 try {
-                    let modules = {
-                        URL: URL,
-                        pss: promiseSafeSync
-                    };
-
                     let script = new Function(`(async () => {
-                            let context = await this.browser.newContext();
-                            
+                            const context = await this.browser.newContext();
+                            this.contextsCounter++;
                             (async function (task, context, TaskDONE, TaskFAIL, modules) {
                                 try {
                                     let data = {};
@@ -81,24 +85,25 @@ export default class BrowsersPool {
                                     if (context !== null && typeof context.close === 'function') {
                                         context.close();
                                     }
+                                    this.contextsCounter--;
                                     task.getCallback()(TaskDONE, data, task.getTaskTime());
                                 }
                                 catch (e) {
                                     if (context !== null && typeof context.close === 'function') {
                                         context.close();
                                     }
+                                    this.contextsCounter--;
                                     task.getCallback()(TaskFAIL, {'error': 'Fail in script running', 'log': e.toString()}, task.getTaskTime());
                                 }
-                            })(arguments[0], context, arguments[1], arguments[2], arguments[3]);
+                            })(arguments[0], context, arguments[1], arguments[2], this.modules);
                     })()`);
 
                     // @ts-ignore
-                    script.call(this, task, TaskDONE, TaskFAIL, modules);
+                    script.call(this, task, TaskDONE, TaskFAIL);
                 }
                 catch (e) {
                     task.getCallback()(TaskFAIL, {'error': 'Fail in script calling', 'log': e.toString()}, task.getTaskTime());
                 }
-
             }
         }, 10);
     }
