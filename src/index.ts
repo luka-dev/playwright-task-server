@@ -46,7 +46,7 @@ webServer.post(`/task`, (request, response) => {
             times.done_at = (new Date).getTime();
             response.json({
                 status: scriptStatus,
-                stats: {
+                metadata: {
                     ...times
                 },
                 data: {

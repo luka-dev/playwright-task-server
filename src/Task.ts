@@ -1,6 +1,3 @@
-//problem - WebKitBrowserNewContextOptions not exported. Temp solution, just use 'object'
-// import {WebKitBrowserNewContextOptions} from "playwright/types/types";
-
 export const DONE = 'DONE';
 export const FAIL = 'FAIL';
 
