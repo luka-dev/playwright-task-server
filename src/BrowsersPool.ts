@@ -66,7 +66,7 @@ export default class BrowsersPool {
 
     public runTaskManager(): void {
         this.taskManager = setInterval(() => {
-            if (this.maxWorkers < this.contextsCounter) {
+            if (this.browser !== null && this.contextsCounter < this.maxWorkers) {
                 //@ts-ignore
                 let task: Task = this.tasksQueue.shift();
                 if (task !== undefined) {
