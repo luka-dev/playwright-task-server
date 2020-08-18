@@ -15,6 +15,7 @@ webServer.get('/', (request, response) => {
     })
 })
 
+//todo make stats
 webServer.get('/stats', (request, response) => {
     response.json({
         tasks: {
