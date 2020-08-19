@@ -3,9 +3,9 @@
   "SERVER_PORT": 80,
   "RUN_OPTIONS": {
     "MAX_WORKERS": null,
-    "TASK_TIMEOUT": 30000,
     "BROWSER": "chromium",
     "INLINE": {
+      "timeout": 30000,
       "args": [
         "--enable-features=NetworkService",
         "--allow-running-insecure-content",
@@ -54,7 +54,7 @@
         "--prerender-from-omnibox=disabled",
         "--use-mock-keychain"
       ],
-      "headless": false,
+      "headless": true,
       "slowMo": 0
     }
   }

@@ -4,6 +4,9 @@ import Task, {TaskTimes, DONE as TaskDONE, FAIL as TaskFAIL} from "./Task";
 import URL from "url";
 import {promiseSafeSync} from "./Utils";
 import OS from "os";
+import {Stats} from "./Stats";
+import {errors} from "playwright/index";
+import TimeoutError = errors.TimeoutError;
 
 interface InlineOptions {
     args: string[],
@@ -24,12 +27,15 @@ export default class BrowsersPool {
 
     private contextsCounter: number = 0
 
+    private stats: Stats;
+
     private modules = {
         URL: URL,
         pss: promiseSafeSync
     };
 
-    public constructor(options: InlineOptions, maxWorkers: number | null, browser: string = 'chromium') {
+    public constructor(stats: Stats, options: InlineOptions, maxWorkers: number | null, browser: string = 'chromium') {
+        this.stats = stats;
 
         // @ts-ignore
         this.browsersList['chromium'] = chromium;
@@ -76,7 +82,7 @@ export default class BrowsersPool {
                         let script = new Function(`(async () => {
                                 const context = await this.browser.newContext();
                                 this.contextsCounter++;
-                                (async function (task, context, TaskDONE, TaskFAIL, modules) {
+                                (async function (task, context, TaskDONE, TaskFAIL, modules, stats) {
                                     try {
                                         let data = {};
                                         ${task.getScript()}
@@ -84,6 +90,7 @@ export default class BrowsersPool {
                                             context.close();
                                         }
                                         this.contextsCounter--;
+                                        stats.addSuccess();
                                         task.getCallback()(TaskDONE, data, task.getTaskTime());
                                     }
                                     catch (e) {
@@ -91,14 +98,20 @@ export default class BrowsersPool {
                                             context.close();
                                         }
                                         this.contextsCounter--;
+                                        if (e.name === 'TimeoutError') {
+                                            console.log(e);
+                                            stats.addTimeout();
+                                        }
+                                        stats.addFail();
                                         task.getCallback()(TaskFAIL, {'error': 'Fail in script running', 'log': e.toString()}, task.getTaskTime());
                                     }
-                                })(arguments[0], context, arguments[1], arguments[2], this.modules);
+                                })(arguments[0], context, arguments[1], arguments[2], this.modules, this.stats);
                             })()`);
 
                         // @ts-ignore
                         script.call(this, task, TaskDONE, TaskFAIL);
                     } catch (e) {
+                        this.stats.addFail();
                         task.getCallback()(TaskFAIL, {
                             'error': 'Fail in script calling',
                             'log': e.toString()
@@ -128,8 +141,12 @@ export default class BrowsersPool {
         if (options === null) {
             options = this.getDefaultBrowserOptions();
         }
-
+        this.stats.addTask();
         this.tasksQueue.push(new Task(script, callback, options));
+    }
+
+    public getQueueLength(): number {
+        return this.tasksQueue.length;
     }
 
 }

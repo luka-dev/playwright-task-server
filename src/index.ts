@@ -1,8 +1,12 @@
 import * as config from "./config.json";
 import {WebServer} from "./WebServer";
 import BrowsersPool from "./BrowsersPool";
+import OS from "os";
+import {Stats} from "./Stats";
 
-const browsersPool = new BrowsersPool(config.RUN_OPTIONS.INLINE, config.RUN_OPTIONS.MAX_WORKERS, config.RUN_OPTIONS.BROWSER);
+const stats = new Stats();
+
+const browsersPool = new BrowsersPool(stats, config.RUN_OPTIONS.INLINE, config.RUN_OPTIONS.MAX_WORKERS, config.RUN_OPTIONS.BROWSER);
 browsersPool.runTaskManager();
 
 const webServer = new WebServer(config.SERVER_PORT);
@@ -15,34 +19,34 @@ webServer.get('/', (request, response) => {
     })
 })
 
-//todo make stats
 webServer.get('/stats', (request, response) => {
     response.json({
         tasks: {
-            total: 0,
-            successful: 0,
-            failed: 0,
-            timeout: 0
+            total: stats.getTotalTasks(),
+            successful: stats.getTotalTasksSuccessful(),
+            failed: stats.getTotalTasksFailed(),
+            timeout: stats.getTotalTasksTimeout()
         },
-        queue: 0,
-        uptime: 0,
+        queue: browsersPool.getQueueLength(),
+        uptime: OS.uptime(),
         hardware: {
             cpu: {
-                current: 0,
-                max: 0
-            },
-            ram: {
-                total: 0,
-                current: 0,
-                max: 0,
+                avg: {
+                    '1': OS.loadavg()[0],
+                    '5': OS.loadavg()[1],
+                    '15': OS.loadavg()[2]
+                }
             }
+        },
+        ram: {
+            total: OS.totalmem(),
+            current: OS.totalmem() - OS.freemem(),
         }
     })
 });
 
 webServer.post(`/task`, (request, response) => {
     if (typeof request.body.script === 'string') {
-
         browsersPool.addTask(request.body.script, (scriptStatus: string, scriptReturn = {}, times) => {
             times.done_at = (new Date).getTime();
             response.json({
