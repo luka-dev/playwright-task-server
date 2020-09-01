@@ -19,6 +19,19 @@ if in config.json AUTH_KEY is not null, add header
 
 in form, field with name 'script' 
 
+Example of request
+```js
+fetch("http://localhost/task", {
+  "method": "POST",
+  "headers": {
+    "content-type": "application/x-www-form-urlencoded",
+    "authorization": "HERE_AUTH_KEY"
+  },
+  "body": {
+    "script": "HERE_IS_SCRIPT"
+  }
+```
+
 Example of script [(playwright docs)](https://playwright.dev/)
 ```js
 //Creating page inside context
