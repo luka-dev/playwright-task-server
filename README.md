@@ -1,5 +1,5 @@
 # PLAYWRIGHT task server
-It's a Node.Js server that's hold playwright to precess tasks (mainly - crawling)
+It's a Node.Js server that's hold playwright to process tasks (mainly - crawling)
 
 Concept:
 - Express hold RESTful API and receive authorized(or not) request with task script
@@ -21,7 +21,7 @@ in form, field with name 'script'
 
 Example of request
 ```js
-fetch("http://localhost/task", {
+fetch("http://server_address:port/task", {
   "method": "POST",
   "headers": {
     "content-type": "application/x-www-form-urlencoded",
@@ -30,6 +30,7 @@ fetch("http://localhost/task", {
   "body": {
     "script": "HERE_IS_SCRIPT"
   }
+});
 ```
 
 Example of script [(playwright docs)](https://playwright.dev/)
