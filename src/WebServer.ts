@@ -28,8 +28,7 @@ export class WebServer {
         }
 
         this.app.use(express.json());
-        this.app.use(express.json());
-        this.app.use(express.urlencoded());
+        this.app.use(express.urlencoded({ extended: true }));
     }
 
     public setAuthKey(key: string | null = null): void {
