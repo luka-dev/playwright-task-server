@@ -3,10 +3,10 @@ It's a Node.Js server that's hold playwright to precess tasks (mainly - crawling
 
 Concept:
 - Express hold RESTful API and receive authorized(or not) request with task script
-- Add your task to queue (will be runed as soon as any worker will free)
+- Add your task to queue (will be runed as soon as any worker will be free)
 - Run separate context(incognito env.)
 - Run your task script in something like isolated context
-- Return to express callback result of task script in answer for your request
+- Return to express callback result of task script and answer for your request
 
 
 Example of request:
