@@ -1,12 +1,17 @@
-import {ChromiumBrowser, FirefoxBrowser, WebKitBrowser} from "playwright";
-import {chromium, firefox, webkit} from "playwright";
+import {
+    ChromiumBrowser,
+    FirefoxBrowser,
+    WebKitBrowser,
+    chromium,
+    firefox,
+    webkit,
+    errors
+} from "playwright";
 import Task, {TaskTimes, DONE as TaskDONE, FAIL as TaskFAIL} from "./Task";
 import URL from "url";
-import {promiseSafeSync} from "./Utils";
+import {promiseSafeSync} from "./modules/pss";
 import OS from "os";
 import {Stats} from "./Stats";
-import {errors} from "playwright/index";
-import TimeoutError = errors.TimeoutError;
 
 interface InlineOptions {
     args: string[],
@@ -31,7 +36,7 @@ export default class BrowsersPool {
 
     private modules = {
         URL: URL,
-        pss: promiseSafeSync
+        pss: promiseSafeSync,
     };
 
     public constructor(stats: Stats, options: InlineOptions, maxWorkers: number | null, browser: string = 'chromium') {

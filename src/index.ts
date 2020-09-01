@@ -1,4 +1,5 @@
-import * as config from "./config.json";
+// @ts-ignore not under root dir
+import * as config from "./../config.json";
 import {WebServer} from "./WebServer";
 import BrowsersPool from "./BrowsersPool";
 import OS from "os";

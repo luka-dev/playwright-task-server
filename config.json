@@ -1,9 +1,10 @@
 {
   "AUTH_KEY": null,
-  "SERVER_PORT": 80,
+  "SERVER_PORT": 880,
   "RUN_OPTIONS": {
     "MAX_WORKERS": null,
     "BROWSER": "chromium",
+    "PROXY": null,
     "INLINE": {
       "timeout": 30000,
       "args": [
@@ -54,7 +55,7 @@
         "--prerender-from-omnibox=disabled",
         "--use-mock-keychain"
       ],
-      "headless": true,
+      "headless": false,
       "slowMo": 0
     }
   }
