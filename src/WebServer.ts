@@ -81,7 +81,7 @@ export class WebServer {
 
     public get(route: string, callback: RouteCallback): void {
         this.app.get(route, (request, response) => {
-            if (route === '/' && !this.checkAuth(request)) {
+            if (route !== '/' && !this.checkAuth(request)) {
                 response.send(401);
             }
             callback(request, response);
