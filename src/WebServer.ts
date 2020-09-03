@@ -42,8 +42,11 @@ export class WebServer {
         this.app.use(express.urlencoded({ extended: true }));
     }
 
-    public setAuthKey(key: string | null = null): void {
+    public setAuthKey(key: string | null = null, checkEnv: boolean = false): void {
         this.authKey = key;
+        if (checkEnv && process.env.APPLICATION_KEY !== undefined){
+            this.authKey = process.env.APPLICATION_KEY;
+        }
     }
 
     public checkAuth(request: Request): boolean {

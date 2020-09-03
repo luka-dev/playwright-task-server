@@ -12,7 +12,7 @@ browsersPool.runTaskManager();
 
 const webServer = new WebServer(config.SERVER_PORT, config.SERVER_HOSTNAME);
 
-webServer.setAuthKey(config.AUTH_KEY);
+webServer.setAuthKey(config.AUTH_KEY, true);
 
 webServer.get('/', (request, response) => {
     response.json({

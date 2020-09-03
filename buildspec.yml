@@ -7,8 +7,7 @@ commands:
   - npm install -g typescript
   - npm install
 pre_build:
-  - cho PreBuild started on `date`
-  - sed -i 's/"AUTH_KEY": null,/"AUTH_KEY": $APPLICATION_WORKERS,/g' config.json
+  - echo No PreBuild
 build:
 commands:
   - echo Build started on `date`
