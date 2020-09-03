@@ -1,6 +1,7 @@
 {
   "AUTH_KEY": null,
-  "SERVER_PORT": 880,
+  "SERVER_PORT": null,
+  "SERVER_HOSTNAME": "127.0.0.1",
   "RUN_OPTIONS": {
     "MAX_WORKERS": null,
     "BROWSER": "chromium",

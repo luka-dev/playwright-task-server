@@ -10,7 +10,7 @@ const stats = new Stats();
 const browsersPool = new BrowsersPool(stats, config.RUN_OPTIONS.INLINE, config.RUN_OPTIONS.MAX_WORKERS, config.RUN_OPTIONS.BROWSER);
 browsersPool.runTaskManager();
 
-const webServer = new WebServer(config.SERVER_PORT);
+const webServer = new WebServer(config.SERVER_PORT, config.SERVER_HOSTNAME);
 
 webServer.setAuthKey(config.AUTH_KEY);
 
