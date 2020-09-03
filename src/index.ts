@@ -5,8 +5,6 @@ import BrowsersPool from "./BrowsersPool";
 import OS from "os";
 import {Stats} from "./Stats";
 
-console.log(process.env);
-
 const stats = new Stats();
 
 const browsersPool = new BrowsersPool(stats, config.RUN_OPTIONS.INLINE, config.RUN_OPTIONS.MAX_WORKERS, config.RUN_OPTIONS.BROWSER);

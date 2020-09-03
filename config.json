@@ -1,6 +1,6 @@
 {
   "AUTH_KEY": null,
-  "SERVER_PORT": null,
+  "SERVER_PORT": 880,
   "RUN_OPTIONS": {
     "MAX_WORKERS": null,
     "BROWSER": "chromium",
@@ -55,7 +55,7 @@
         "--prerender-from-omnibox=disabled",
         "--use-mock-keychain"
       ],
-      "headless": false,
+      "headless": true,
       "slowMo": 0
     }
   }
