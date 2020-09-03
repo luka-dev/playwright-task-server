@@ -18,8 +18,7 @@ export class WebServer {
     private server: http.Server | null = null;
 
     public constructor(port: number|null = 80, hostname: string = 'localhost', useCors: boolean = true) {
-        if (port !== null)
-        {
+        if (port !== null) {
             this.port = port;
         } else {
             let envPort = process.env.PORT;
@@ -44,8 +43,8 @@ export class WebServer {
 
     public setAuthKey(key: string | null = null, checkEnv: boolean = false): void {
         this.authKey = key;
-        if (checkEnv && process.env.APPLICATION_KEY !== undefined){
-            this.authKey = process.env.APPLICATION_KEY;
+        if (checkEnv && process.env.KEY !== undefined){
+            this.authKey = process.env.KEY;
         }
     }
 
