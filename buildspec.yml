@@ -13,6 +13,8 @@ phases:
       - echo Build started on `date`
       - npm run build
   post_build:
+    commands:
+      - echo No PostBuild actions
   commands:
     - echo Build completed on `date`
 artifacts:
