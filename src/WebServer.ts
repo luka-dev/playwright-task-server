@@ -11,23 +11,20 @@ export class WebServer {
 
     private authKey: string | null = null;
 
-    private readonly port: number;
-    private readonly hostname: string;
+    private readonly port: number | null;
     private app: Express;
 
     private server: http.Server | null = null;
 
-    public constructor(port: number|null = 80, hostname: string = 'localhost', useCors: boolean = true) {
-        if (port !== null) {
+    public constructor(port: number|null = 80, useCors: boolean = true) {
             this.port = port;
-        } else {
-            let envPort = process.env.PORT;
-            if (envPort === undefined) {
-                throw new Error('no port');
-            }
-            this.port = parseInt(envPort);
+
+        if (process.env.PORT !== undefined) {
+            this.port = parseInt(process.env.PORT);
         }
-        this.hostname = hostname;
+        if (this.port === null) {
+            throw new Error('no port env/config');
+        }
 
         this.app = express();
 
@@ -58,7 +55,7 @@ export class WebServer {
 
     public start(): void {
         if (this.server === null) {
-            this.server = this.app.listen(this.port, this.hostname);
+            this.server = this.app.listen(this.port);
 
             if (this.authKey === null) {
                 console.log('APP Runned in InSecure mode!');
