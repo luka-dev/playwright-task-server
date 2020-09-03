@@ -12,10 +12,9 @@ phases:
   post_build:
   commands:
     - echo Build completed on `date`
-cache:
-paths:
-  - 'node_modules/**/*'
 artifacts:
-files:
-  - '**/*'
-name: playwright-server-$(date +%Y-%m-%d)
+  files:
+    - dist/**/*
+    - node_modules/**/*
+    - package.json
+    - package-lock.json
