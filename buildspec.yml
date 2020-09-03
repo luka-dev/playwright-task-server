@@ -1,4 +1,7 @@
 version: 0.2
+install:
+  runtime-versions:
+    nodejs: 12
 phases:
   pre_build:
     commands:
