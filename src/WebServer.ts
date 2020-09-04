@@ -16,13 +16,13 @@ export class WebServer {
 
     private server: http.Server | null = null;
 
-    public constructor(port: number|null = 80, useCors: boolean = true) {
+    public constructor(port: number | null = 80, envOverwrite: boolean = false, useCors: boolean = true) {
+        if (port !== null || process.env.PORT !== undefined) {
             this.port = port;
-
-        if (process.env.PORT !== undefined) {
-            this.port = parseInt(process.env.PORT);
-        }
-        if (this.port === null) {
+            if (process.env.PORT !== undefined && (envOverwrite || port === null) && parseInt(process.env.PORT)) {
+                this.port = parseInt(process.env.PORT);
+            }
+        } else {
             throw new Error('no port env/config');
         }
 
@@ -35,12 +35,12 @@ export class WebServer {
         }
 
         this.app.use(express.json());
-        this.app.use(express.urlencoded({ extended: true }));
+        this.app.use(express.urlencoded({extended: true}));
     }
 
     public setAuthKey(key: string | null = null, checkEnv: boolean = false): void {
         this.authKey = key;
-        if (checkEnv && process.env.KEY !== undefined){
+        if (checkEnv && process.env.KEY !== undefined) {
             this.authKey = process.env.KEY;
         }
     }

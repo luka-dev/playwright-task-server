@@ -7,10 +7,10 @@ import {Stats} from "./Stats";
 
 const stats = new Stats();
 
-const browsersPool = new BrowsersPool(stats, config.RUN_OPTIONS.INLINE, config.RUN_OPTIONS.MAX_WORKERS, config.RUN_OPTIONS.BROWSER);
+const browsersPool = new BrowsersPool(stats, config.RUN_OPTIONS.INLINE, config.RUN_OPTIONS.MAX_WORKERS, config.ENV_OVERWRITE, config.RUN_OPTIONS.BROWSER);
 browsersPool.runTaskManager();
 
-const webServer = new WebServer(config.SERVER_PORT);
+const webServer = new WebServer(config.SERVER_PORT, config.ENV_OVERWRITE);
 
 webServer.setAuthKey(config.AUTH_KEY, true);
 

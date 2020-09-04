@@ -10,7 +10,7 @@ import {
 import Task, {TaskTimes, DONE as TaskDONE, FAIL as TaskFAIL} from "./Task";
 import URL from "url";
 import {promiseSafeSync} from "./modules/pss";
-import OS from "os";
+import OS, {type} from "os";
 import {Stats} from "./Stats";
 
 interface InlineOptions {
@@ -21,7 +21,6 @@ interface InlineOptions {
 
 export default class BrowsersPool {
 
-    private browsersList: any = {};
     private browser: ChromiumBrowser | FirefoxBrowser | WebKitBrowser | null = null;
     private defaultBrowserOptions: object = {};
 
@@ -39,41 +38,42 @@ export default class BrowsersPool {
         pss: promiseSafeSync,
     };
 
-    public constructor(stats: Stats, options: InlineOptions, maxWorkers: number | null, browser: string = 'chromium') {
+    public constructor(stats: Stats, options: InlineOptions, maxWorkers: number | null, envOverwrite: boolean = false, browser: string = 'chromium') {
         this.stats = stats;
 
-        // @ts-ignore
-        this.browsersList['chromium'] = chromium;
-        // @ts-ignore
-        this.browsersList['firefox'] = firefox;
-        // @ts-ignore
-        this.browsersList['webkit'] = webkit;
+        let browsersList = {
+            chromium: chromium,
+            firefox: firefox,
+            webkit: webkit,
+        }
 
         this.browser = null;
         this.tasksQueue = [];
 
+        //Max Workers
         if (typeof maxWorkers === "number" && maxWorkers >= 1) {
             this.maxWorkers = maxWorkers;
-        } else if (maxWorkers === null) {
-            //Get CPU's cores count and multiply by 12
-            //12 contexts per cpu
-            if (OS.cpus().length >= 1) {
-                this.maxWorkers = OS.cpus().length * 12;
-            } else {
-                this.maxWorkers = 12
+            // @ts-ignore
+            if (process.env.WORKERS !== undefined && envOverwrite && parseInt(process.env.WORKER) >= 1) {
+                // @ts-ignore
+                this.maxWorkers = parseInt(process.env.WORKER);
             }
+        }
+        // @ts-ignore
+        else if (process.env.WORKERS !== undefined && parseInt(process.env.WORKER) >= 1) {
+            // @ts-ignore
+            this.maxWorkers = parseInt(process.env.WORKER);
+        } else if (OS.cpus().length >= 1) {
             this.maxWorkers = OS.cpus().length * 12;
-            if (process.env.WORKERS !== undefined) {
-                this.maxWorkers = parseInt(process.env.WORKERS);
-            }
         } else {
             console.log(`Wrong maxWorkers: ${maxWorkers}`);
             console.log(`Dying`);
             process.exit(1);
         }
 
+
         if (browser === 'chromium' || browser === 'firefox' || browser === 'webkit') {
-            this.browsersList[browser].launch(options)
+            browsersList[browser].launch(options)
                 .then((runnedBrowser: ChromiumBrowser | FirefoxBrowser | WebKitBrowser) => {
                     this.browser = runnedBrowser;
                 })
