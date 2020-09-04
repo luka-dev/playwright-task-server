@@ -73,11 +73,15 @@ export default class BrowsersPool {
         }
 
         if (browser === 'chromium' || browser === 'firefox' || browser === 'webkit') {
-            this.browsersList[browser].launch(options).catch((e: any) => {
-                console.log(`Error in running browser: ${e}`);
-                console.log(`Dying`);
-                process.exit(1);
-            })
+            this.browsersList[browser].launch(options)
+                .then((runnedBrowser: ChromiumBrowser | FirefoxBrowser | WebKitBrowser) => {
+                    this.browser = runnedBrowser;
+                })
+                .catch((e: any) => {
+                    console.log(`Error in running browser: ${e}`);
+                    console.log(`Dying`);
+                    process.exit(1);
+                })
         } else {
             console.log(`Wrong browser type: ${browser}`);
             console.log(`Dying`);
@@ -86,6 +90,9 @@ export default class BrowsersPool {
     }
 
     public runTaskManager(): void {
+
+        console.log('Runnung Task Manager');
+
         this.taskManager = setInterval(() => {
             if (this.browser !== null && this.contextsCounter < this.maxWorkers) {
                 //@ts-ignore
@@ -135,6 +142,7 @@ export default class BrowsersPool {
                 }
             }
         }, 10);
+        console.log('Runned');
     }
 
     public stopTaskManager(): void {
@@ -162,6 +170,10 @@ export default class BrowsersPool {
 
     public getQueueLength(): number {
         return this.tasksQueue.length;
+    }
+
+    public getWorkersCount(): number {
+        return this.maxWorkers;
     }
 
 }

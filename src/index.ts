@@ -29,6 +29,7 @@ webServer.get('/stats', (request, response) => {
             timeout: stats.getTotalTasksTimeout()
         },
         queue: browsersPool.getQueueLength(),
+        workers: browsersPool.getWorkersCount(),
         uptime: OS.uptime(),
         hardware: {
             cpu: {
