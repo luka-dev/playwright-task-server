@@ -65,9 +65,11 @@ export default class BrowsersPool {
         }
 
         if (browser === 'chromium' || browser === 'firefox' || browser === 'webkit') {
-            (async () => {
-                this.browser = await this.browsersList[browser].launch(options);
-            })();
+            this.browsersList[browser].launch(options).catch((e: any) => {
+                console.log(`Error in running browser: ${e}`);
+                console.log(`Dying`);
+                process.exit(1);
+            })
         } else {
             console.log(`Wrong browser type: ${browser}`);
             console.log(`Dying`);
