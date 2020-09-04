@@ -57,7 +57,15 @@ export default class BrowsersPool {
         } else if (maxWorkers === null) {
             //Get CPU's cores count and multiply by 12
             //12 contexts per cpu
+            if (OS.cpus().length >= 1) {
+                this.maxWorkers = OS.cpus().length * 12;
+            } else {
+                this.maxWorkers = 12
+            }
             this.maxWorkers = OS.cpus().length * 12;
+            if (process.env.WORKERS !== undefined) {
+                this.maxWorkers = parseInt(process.env.WORKERS);
+            }
         } else {
             console.log(`Wrong maxWorkers: ${maxWorkers}`);
             console.log(`Dying`);
