@@ -133,6 +133,7 @@ export default class BrowsersPool {
                         // @ts-ignore
                         script.call(this, task, TaskDONE, TaskFAIL);
                     } catch (e) {
+                        this.contextsCounter--;
                         this.stats.addFail();
                         task.getCallback()(TaskFAIL, {
                             'error': 'Fail in script calling',
