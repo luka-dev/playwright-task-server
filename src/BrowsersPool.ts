@@ -13,10 +13,25 @@ import {promiseSafeSync} from "./modules/pss";
 import OS, {type} from "os";
 import {Stats} from "./Stats";
 
+interface ProxyOptions {
+    "server": string,
+    "bypass": string,
+    "username": string,
+    "password": string
+}
+
 interface InlineOptions {
     args: string[],
     headless: boolean,
-    slowMo: number
+    ignoreHTTPSErrors: boolean,
+    slowMo: number,
+    proxy: ProxyOptions|null|undefined
+}
+
+interface RunOptions {
+    MAX_WORKERS: number|null,
+    BROWSER: string,
+    INLINE: InlineOptions
 }
 
 export default class BrowsersPool {
@@ -25,6 +40,8 @@ export default class BrowsersPool {
     private defaultBrowserOptions: object = {};
 
     private readonly maxWorkers: number;
+
+    private ignoreHTTPSError: boolean = true;
 
     private tasksQueue: Task[] = [];
     private taskManager: NodeJS.Timeout | null = null;
@@ -38,8 +55,10 @@ export default class BrowsersPool {
         pss: promiseSafeSync,
     };
 
-    public constructor(stats: Stats, options: InlineOptions, maxWorkers: number | null, envOverwrite: boolean = false, browser: string = 'chromium') {
+    public constructor(stats: Stats, runOptions: RunOptions, envOverwrite: boolean = false) {
         this.stats = stats;
+
+        this.ignoreHTTPSError = runOptions.INLINE.ignoreHTTPSErrors;
 
         let browsersList = {
             chromium: chromium,
@@ -51,8 +70,8 @@ export default class BrowsersPool {
         this.tasksQueue = [];
 
         //Max Workers
-        if (typeof maxWorkers === "number" && maxWorkers >= 1) {
-            this.maxWorkers = maxWorkers;
+        if (typeof runOptions.MAX_WORKERS === "number" && runOptions.MAX_WORKERS >= 1) {
+            this.maxWorkers = runOptions.MAX_WORKERS;
             // @ts-ignore
             if (process.env.WORKERS !== undefined && envOverwrite && parseInt(process.env.WORKER) >= 1) {
                 // @ts-ignore
@@ -66,14 +85,25 @@ export default class BrowsersPool {
         } else if (OS.cpus().length >= 1) {
             this.maxWorkers = OS.cpus().length * 12;
         } else {
-            console.log(`Wrong maxWorkers: ${maxWorkers}`);
+            console.log(`Wrong maxWorkers: ${runOptions.MAX_WORKERS}`);
             console.log(`Dying`);
             process.exit(1);
         }
 
+        if (runOptions.INLINE.proxy === null && process.env.PROXY !== undefined) {
+            runOptions.INLINE.proxy = {
+                server: process.env.PROXY,
+                bypass: process.env.BYPASS ?? "",
+                username: process.env.USERNAME ?? "",
+                password: process.env.PASSWORD ?? ""
+            };
+        } else {
+            runOptions.INLINE.proxy = undefined;
+        }
 
-        if (browser === 'chromium' || browser === 'firefox' || browser === 'webkit') {
-            browsersList[browser].launch(options)
+        if (runOptions.BROWSER === 'chromium' || runOptions.BROWSER === 'firefox' || runOptions.BROWSER === 'webkit') {
+            // @ts-ignore
+            browsersList[runOptions.BROWSER].launch(runOptions.INLINE)
                 .then((runnedBrowser: ChromiumBrowser | FirefoxBrowser | WebKitBrowser) => {
                     this.browser = runnedBrowser;
                 })
@@ -83,7 +113,7 @@ export default class BrowsersPool {
                     process.exit(1);
                 })
         } else {
-            console.log(`Wrong browser type: ${browser}`);
+            console.log(`Wrong browser type: ${runOptions.BROWSER}`);
             console.log(`Dying`);
             process.exit(1);
         }
@@ -102,7 +132,7 @@ export default class BrowsersPool {
 
                     try {
                         let script = new Function(`(async () => {
-                                const context = await this.browser.newContext();
+                                const context = await this.browser.newContext({ignoreHTTPSErrors: arguments[3]});
                                 this.contextsCounter++;
                                 (async function (task, context, TaskDONE, TaskFAIL, modules, stats) {
                                     try {
@@ -131,7 +161,7 @@ export default class BrowsersPool {
                             })()`);
 
                         // @ts-ignore
-                        script.call(this, task, TaskDONE, TaskFAIL);
+                        script.call(this, task, TaskDONE, TaskFAIL, this.ignoreHTTPSError);
                     } catch (e) {
                         this.contextsCounter--;
                         this.stats.addFail();
