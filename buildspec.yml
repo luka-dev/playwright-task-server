@@ -8,6 +8,7 @@ phases:
       - echo Dep install started on `date`
       - npm install -g typescript
       - PLAYWRIGHT_BROWSERS_PATH=0 npm install
+      - npm audit fix
   build:
     commands:
       - echo Build started on `date`
@@ -15,6 +16,7 @@ phases:
   post_build:
     commands:
       - PLAYWRIGHT_BROWSERS_PATH=0 npm install --only=prod
+      - npm audit fix
       - echo Build completed on `date`
 artifacts:
   files:

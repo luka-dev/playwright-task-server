@@ -73,6 +73,6 @@ Also task server support "modeules" custom lib that will be available inside run
 
 ### todo
 - [x] add flexible support for proxy in config
-in config like ProxyOptions interface or process.env.SERVER, BYPASS, USERNAME, PASSWORD
+in config like ProxyOptions interface or process.env.PW_TASK_SERVER, BYPASS, USERNAME, PASSWORD
 
 - [ ] add google recaptcha solver

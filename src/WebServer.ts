@@ -17,10 +17,10 @@ export class WebServer {
     private server: http.Server | null = null;
 
     public constructor(port: number | null = 80, envOverwrite: boolean = false, useCors: boolean = true) {
-        if (port !== null || process.env.PORT !== undefined) {
+        if (port !== null || process.env.PW_TASK_PORT !== undefined) {
             this.port = port;
-            if (process.env.PORT !== undefined && (envOverwrite || port === null) && parseInt(process.env.PORT)) {
-                this.port = parseInt(process.env.PORT);
+            if (process.env.PW_TASK_PORT !== undefined && (envOverwrite || port === null) && parseInt(process.env.PW_TASK_PORT)) {
+                this.port = parseInt(process.env.PW_TASK_PORT);
             }
         } else {
             throw new Error('no port env/config');
@@ -40,8 +40,8 @@ export class WebServer {
 
     public setAuthKey(key: string | null = null, checkEnv: boolean = false): void {
         this.authKey = key;
-        if (checkEnv && process.env.KEY !== undefined) {
-            this.authKey = process.env.KEY;
+        if (checkEnv && process.env.PW_TASK_KEY !== undefined) {
+            this.authKey = process.env.PW_TASK_KEY;
         }
     }
 

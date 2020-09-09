@@ -73,15 +73,15 @@ export default class BrowsersPool {
         if (typeof runOptions.MAX_WORKERS === "number" && runOptions.MAX_WORKERS >= 1) {
             this.maxWorkers = runOptions.MAX_WORKERS;
             // @ts-ignore
-            if (process.env.WORKERS !== undefined && envOverwrite && parseInt(process.env.WORKER) >= 1) {
+            if (process.env.PW_TASK_WORKERS !== undefined && envOverwrite && parseInt(process.env.PW_TASK_WORKER) >= 1) {
                 // @ts-ignore
-                this.maxWorkers = parseInt(process.env.WORKER);
+                this.maxWorkers = parseInt(process.env.PW_TASK_WORKER);
             }
         }
         // @ts-ignore
-        else if (process.env.WORKERS !== undefined && parseInt(process.env.WORKER) >= 1) {
+        else if (process.env.PW_TASK_WORKERS !== undefined && parseInt(process.env.PW_TASK_WORKER) >= 1) {
             // @ts-ignore
-            this.maxWorkers = parseInt(process.env.WORKER);
+            this.maxWorkers = parseInt(process.env.PW_TASK_WORKER);
         } else if (OS.cpus().length >= 1) {
             this.maxWorkers = OS.cpus().length * 12;
         } else {
@@ -90,12 +90,12 @@ export default class BrowsersPool {
             process.exit(1);
         }
 
-        if (runOptions.INLINE.proxy === null && process.env.PROXY !== undefined) {
+        if (runOptions.INLINE.proxy === null && process.env.PW_TASK_PROXY !== undefined) {
             runOptions.INLINE.proxy = {
-                server: process.env.PROXY,
-                bypass: process.env.BYPASS ?? "",
-                username: process.env.USERNAME ?? "",
-                password: process.env.PASSWORD ?? ""
+                server: process.env.PW_TASK_PROXY,
+                bypass: process.env.PW_TASK_BYPASS ?? "",
+                username: process.env.PW_TASK_USERNAME ?? "",
+                password: process.env.PW_TASK_PASSWORD ?? ""
             };
         } else {
             runOptions.INLINE.proxy = undefined;
