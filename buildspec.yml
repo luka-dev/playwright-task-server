@@ -11,10 +11,9 @@ phases:
   build:
     commands:
       - echo Build started on `date`
-      - npm run build
   post_build:
     commands:
-      - npm install --only=prod
+      - PLAYWRIGHT_BROWSERS_PATH=0 npm install --only=prod
       - echo Build completed on `date`
 artifacts:
   files:
