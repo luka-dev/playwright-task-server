@@ -56,7 +56,7 @@ export class WebServer {
     public start(): void {
         if (this.server === null) {
             this.server = this.app.listen(this.port);
-
+            console.log(`Runned on port:${this.port}`);
             if (this.authKey === null) {
                 console.log('APP Runned in InSecure mode!');
             }

@@ -1,6 +1,6 @@
 {
   "AUTH_KEY": null,
-  "SERVER_PORT": 880,
+  "SERVER_PORT": 8080,
   "ENV_OVERWRITE": true,
   "RUN_OPTIONS": {
     "MAX_WORKERS": null,
