@@ -72,5 +72,7 @@ Also task server support "modeules" custom lib that will be available inside run
 [PHP-Lib](https://github.com/luka-dev/playwright-php) for generating simple task script. (lib cover min. req.)
 
 ### todo
-- [ ] add flexible support for proxy in config
+- [x] add flexible support for proxy in config
+in config like ProxyOptions interface or process.env.SERVER, BYPASS, USERNAME, PASSWORD
+
 - [ ] add google recaptcha solver
