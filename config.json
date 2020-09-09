@@ -55,7 +55,7 @@
         "--prerender-from-omnibox=disabled",
         "--use-mock-keychain"
       ],
-      "headless": false,
+      "headless": true,
       "ignoreHTTPSErrors": true,
       "slowMo": 0,
       "proxy": null
