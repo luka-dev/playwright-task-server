@@ -37,6 +37,7 @@ interface RunOptions {
 export default class BrowsersPool {
 
     private browser: ChromiumBrowser | FirefoxBrowser | WebKitBrowser | null = null;
+
     private defaultBrowserOptions: object = {};
 
     private readonly maxWorkers: number;
@@ -171,6 +172,12 @@ export default class BrowsersPool {
                         }, task.getTaskTime());
                     }
                 }
+            }
+            else {
+                console.warn('Browser not launched!');
+                console.warn(this.browser);
+                console.warn(this.contextsCounter);
+                console.warn(this.maxWorkers);
             }
         }, 10);
         console.log('Runned');
