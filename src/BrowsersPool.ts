@@ -7,6 +7,7 @@ import {
     webkit,
     errors
 } from "playwright";
+import stealth from "./modules/stealth";
 import Task, {TaskTimes, DONE as TaskDONE, FAIL as TaskFAIL} from "./Task";
 import URL from "url";
 import {promiseSafeSync} from "./modules/pss";
@@ -54,6 +55,7 @@ export default class BrowsersPool {
     private modules = {
         URL: URL,
         pss: promiseSafeSync,
+        stealth: stealth,
     };
 
     public constructor(stats: Stats, runOptions: RunOptions, envOverwrite: boolean = false) {
@@ -134,6 +136,7 @@ export default class BrowsersPool {
                     try {
                         let script = new Function(`(async () => {
                                 const context = await this.browser.newContext({ignoreHTTPSErrors: arguments[3]});
+                                await this.modules.stealth(context, this.browser.constructor.name);
                                 this.contextsCounter++;
                                 (async function (task, context, TaskDONE, TaskFAIL, modules, stats) {
                                     try {
@@ -174,10 +177,10 @@ export default class BrowsersPool {
                 }
             }
             else {
-                console.warn('Browser not launched!');
-                console.warn(this.browser);
-                console.warn(this.contextsCounter);
-                console.warn(this.maxWorkers);
+                console.warn('Browser not launched! Waiting');
+                // console.warn(this.browser);
+                // console.warn(this.contextsCounter);
+                // console.warn(this.maxWorkers);
             }
         }, 10);
         console.log('Runned');
