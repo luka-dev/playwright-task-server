@@ -1,13 +1,14 @@
 // @ts-ignore not under root dir
 import * as config from "./../config.json";
 import {WebServer} from "./WebServer";
-import BrowsersPool from "./BrowsersPool";
+import BrowsersPool, {RunOptions} from "./BrowsersPool";
 import OS from "os";
 import {Stats} from "./Stats";
+import Task, {TaskTimes} from "./Task";
 
 const stats = new Stats();
 
-const browsersPool = new BrowsersPool(stats, config.RUN_OPTIONS, config.ENV_OVERWRITE);
+const browsersPool = new BrowsersPool(stats, <RunOptions>config.RUN_OPTIONS, config.ENV_OVERWRITE);
 browsersPool.runTaskManager();
 
 const webServer = new WebServer(config.SERVER_PORT, config.ENV_OVERWRITE);
@@ -49,7 +50,7 @@ webServer.get('/stats', (request, response) => {
 
 webServer.post(`/task`, (request, response) => {
     if (typeof request.body.script === 'string') {
-        browsersPool.addTask(request.body.script, (scriptStatus: string, scriptReturn = {}, times) => {
+        browsersPool.addTask(request.body.script, (scriptStatus: string, scriptReturn = {}, times: TaskTimes) => {
             times.done_at = (new Date).getTime();
             response.json({
                 status: scriptStatus,

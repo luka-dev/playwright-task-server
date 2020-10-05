@@ -1,8 +1,11 @@
+import Context from "./Context";
+
 export class Stats {
     private totalTasks: number = 0;
     private totalTasksSuccessful: number = 0;
     private totalTasksFailed: number = 0;
     private totalTasksTimeout: number = 0;
+    private contexts: Context[] = [];
 
 
     private readonly runnedAt: number;
@@ -45,6 +48,14 @@ export class Stats {
 
     public getRunnedAt(): number {
         return this.runnedAt;
+    }
+
+    public setContexts(contexts: Context[]): void {
+        this.contexts = contexts;
+    }
+
+    public getContextsLength(): number {
+        return this.contexts.length;
     }
 
 
