@@ -207,18 +207,20 @@ export default class BrowsersPool {
                             }, task.getTaskTime());
                         });
                 }
-            } else if (this.browser !== null) {
-                console.warn('Browser not launched! Waiting');
-                this.notRunnedCycles++;
-
-                if (this.notRunnedCycles * 10 >= 1000) {
-                    this.notRunnedCycles = 0;
-                    this.runBrowser();
-                }
-            } else if (this.contexts.length < this.maxWorkers) {
+            }
+            else if (this.contexts.length < this.maxWorkers) {
                 console.warn('contextsCounter! Waiting');
                 this.notRunnedCycles = 0;
             }
+            // else if (this.browser) {
+            //     console.warn('Browser not launched! Waiting');
+            //     this.notRunnedCycles++;
+            //
+            //     if (this.notRunnedCycles * 10 >= 1000) {
+            //         this.notRunnedCycles = 0;
+            //         this.runBrowser();
+            //     }
+            // }
 
         }, 10);
         console.log('Runned');
