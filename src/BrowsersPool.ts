@@ -55,7 +55,7 @@ export default class BrowsersPool {
     private stats: Stats;
     private readonly runOptions: RunOptions;
 
-    private notRunnedCycles: number = 0
+    // private notRunnedCycles: number = 0
 
     private modules = {
         URL: URL,
@@ -141,7 +141,7 @@ export default class BrowsersPool {
 
         this.taskManager = setInterval(() => {
             if (this.browser !== null && this.contexts.length < this.maxWorkers) {
-                this.notRunnedCycles = 0;
+                // this.notRunnedCycles = 0;
                 //@ts-ignore
                 let task: Task = this.tasksQueue.shift();
                 if (task !== undefined) {
@@ -210,7 +210,7 @@ export default class BrowsersPool {
             }
             else if (this.contexts.length < this.maxWorkers) {
                 console.warn('contextsCounter! Waiting');
-                this.notRunnedCycles = 0;
+                // this.notRunnedCycles = 0;
             }
             // else if (this.browser) {
             //     console.warn('Browser not launched! Waiting');
