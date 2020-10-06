@@ -116,6 +116,12 @@ export default class BrowsersPool {
 
     }
 
+    public removeContext(context: Context) {
+        let statsContextIndex = this.contexts.indexOf(context);
+        if (statsContextIndex >= 0) this.contexts.splice(statsContextIndex);
+    }
+
+
     public async runBrowser() {
 
         let browsersList: BrowsersList = {
@@ -137,11 +143,10 @@ export default class BrowsersPool {
     }
 
     public async runTaskManager() {
-        console.log('Runnung Task Manager');
+        console.log('Running Task Manager');
 
         this.taskManager = setInterval(() => {
             if (this.browser !== null && this.contexts.length < this.maxWorkers) {
-                // this.notRunnedCycles = 0;
                 //@ts-ignore
                 let task: Task = this.tasksQueue.shift();
                 if (task !== undefined) {
@@ -150,7 +155,6 @@ export default class BrowsersPool {
                     let statsContext = new Context();
 
                     this.contexts.push(statsContext);
-
 
                     (new Promise<object>(async (resolve, reject) => {
                         try {
@@ -174,8 +178,8 @@ export default class BrowsersPool {
                                 });`
                             );
                             script(context, this.modules, data)
-                                .then((response:object) => {resolve(response);})
-                                .catch((e: any) => {reject(e)});
+                                .then(resolve)
+                                .catch(reject);
                         } catch (e) {
                             reject(e);
                         }
@@ -183,13 +187,13 @@ export default class BrowsersPool {
                         .then((response) => {
                             this.stats.addSuccess();
                             statsContext.closeContext();
+                            this.removeContext(statsContext)
+
                             task.getCallback()(TaskDONE, response, task.getTaskTime());
                         })
                         .catch((e: any) => {
                             statsContext.closeContext();
-
-                            let statsContextIndex = this.contexts.indexOf(statsContext);
-                            if (statsContextIndex >= 0) this.contexts.splice(statsContextIndex);
+                            this.removeContext(statsContext)
 
                             let errorMsg = 'Fail in script calling (runTask)';
 
@@ -208,22 +212,11 @@ export default class BrowsersPool {
                         });
                 }
             }
-            else if (this.contexts.length < this.maxWorkers) {
+            else if (this.contexts.length >= this.maxWorkers) {
                 console.warn('contextsCounter! Waiting');
-                // this.notRunnedCycles = 0;
             }
-            // else if (this.browser) {
-            //     console.warn('Browser not launched! Waiting');
-            //     this.notRunnedCycles++;
-            //
-            //     if (this.notRunnedCycles * 10 >= 1000) {
-            //         this.notRunnedCycles = 0;
-            //         this.runBrowser();
-            //     }
-            // }
-
         }, 10);
-        console.log('Runned');
+        console.log('Runned Task Manager');
     }
 
     public stopTaskManager(): void {
