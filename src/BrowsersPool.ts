@@ -161,7 +161,7 @@ export default class BrowsersPool {
 
                     this.contexts.push(statsContext);
 
-                    (new Promise<object>(async (resolve, reject) => {
+                    (new Promise<any>(async (resolve, reject) => {
                         try {
                             // @ts-ignore
                             const context = await this.browser.newContext();
@@ -169,30 +169,32 @@ export default class BrowsersPool {
                             // @ts-ignore
                             await this.modules.stealth(context, this.browser.constructor.name);
 
-                            const data = {}
-
-                            let script = new Function('context', 'modules', 'data',
+                            let script = new Function('context', 'modules',
                                 `return new Promise(async (resolve, reject) => {
                                     try {
                                         ${task.getScript()}
-                                        resolve(data);
+                                        resolve({});
                                     }
                                     catch (e) {
                                         reject(e);
                                     }
                                 });`
                             );
-                            script(context, this.modules, data)
+                            script(context, this.modules)
                                 .then(resolve)
                                 .catch(reject);
                         } catch (e) {
                             reject(e);
                         }
                     }))
-                        .then((response) => {
+                        .then((response: object) => {
                             this.stats.addSuccess();
                             statsContext.closeContext();
                             this.removeContext(statsContext)
+
+                            if (typeof response !== 'object') {
+                                response = {response};
+                            }
 
                             task.getCallback()(TaskDONE, response, task.getTaskTime());
                         })
@@ -203,11 +205,11 @@ export default class BrowsersPool {
                             let errorMsg = 'Fail in script calling (runTask)';
 
                             //if browser not runned
-                            if (e.message.indexOf('Target.createBrowserContext') >= 0) {
+                            if (typeof e.message === 'string' && e.message.indexOf('Target.createBrowserContext') >= 0) {
                                 this.runBrowser();
                                 this.tasksQueue.push(task);
                             } else {
-                                if (e.name === 'TimeoutError') {
+                                if (typeof e.message === 'string' && e.name === 'TimeoutError') {
                                     errorMsg = 'TimeOut in script';
                                     this.stats.addTimeout();
                                 } else {
