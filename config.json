@@ -25,6 +25,7 @@
         "--disable-gpu",
         "--disable-hang-monitor",
         "--disable-infobars",
+        "--window-position=0,0",
         "--disable-notifications",
         "--disable-offer-store-unmasked-wallet-cards",
         "--disable-offer-upload-credit-cards",
@@ -53,12 +54,17 @@
         "--no-zygote",
         "--password-store=basic",
         "--prerender-from-omnibox=disabled",
-        "--use-mock-keychain"
+        "--use-mock-keychain",
+        "--user-agent=\"Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/85.0.4183.121 Safari/537.36\""
       ],
-      "headless": true,
-      "ignoreHTTPSErrors": true,
+      "headless": false,
       "slowMo": 0,
-      "proxy": null
+      "proxy": {
+        "server": "mixed.rotating.proxyrack.net:444",
+        "bypass": "",
+        "username": "stefrogovskiy",
+        "password": "e70600-8cda60-46ee46-406b0d-b42660"
+      }
     }
   }
 }

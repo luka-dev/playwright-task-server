@@ -5,8 +5,8 @@
   "main": "build/index.js",
   "scripts": {
     "clean": "rimraf dist",
-    "build": "tsc",
-    "start": "node ./dist/src/index.js",
+    "build": "PLAYWRIGHT_BROWSERS_PATH=0 tsc",
+    "start": "PLAYWRIGHT_BROWSERS_PATH=0 node ./dist/src/index.js",
     "run": "npm run build && npm run start"
   },
   "repository": {

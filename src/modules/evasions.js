@@ -1,10 +1,22 @@
 // Delete webdriver
-let connection    = navigator.connection;
+let connection = navigator.connection;
 let connectionRtt = connection ? connection.rtt : undefined;
 console.log(connection);
 console.log(connectionRtt);
 
-delete Object.getPrototypeOf(navigator).webdriver;
+// delete Object.getPrototypeOf(navigator).webdriver;
+Object.defineProperty(navigator, 'webdriver', { get: () => false, });
+
+navigator.userAgentData.mobile; // false
+navigator.userAgentData.uaList; // [{ "brand": "Google Chrome",
+
+navigator.userAgentData.getHighEntropyValues([
+    "platform",
+    "platformVersion",
+    "architecture",
+    "model",
+    "uaFullVersion"
+]);
 
 // Fake webGL vendor + renderer
 try {
@@ -62,6 +74,23 @@ try {
 } catch (err) {
     console.warn(err)
 }
+
+try {
+    Object.defineProperty(navigator, "languages", {
+        get: function () {
+            return ["en-US", "en"];
+        }
+    });
+
+// overwrite the `plugins` property to use a custom getter
+    Object.defineProperty(navigator, 'plugins', {
+        get: function () {
+            // this just needs to have `length > 0`, but we could mock the plugins too
+            return [1, 2, 3, 4, 5];
+        },
+    });
+}
+catch (e) {}
 
 // Fake hairline feature, see https://github.com/Niek/playwright-addons/issues/2
 const _osH = Object.getOwnPropertyDescriptor(HTMLElement.prototype, 'offsetHeight');
