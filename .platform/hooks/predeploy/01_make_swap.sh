@@ -6,8 +6,8 @@ SWAP_BLOCK_MEGABYTES=128M
 
 if [ -f $SWAPFILE ]; then
   # NO OUTPUT
-#	echo "Swapfile $SWAPFILE found, assuming already setup"
-	exit;
+  #	echo "Swapfile $SWAPFILE found, assuming already setup"
+	exit 0;
 fi
 
 #SWAP_BLOCKS * $SWAP_BLOCK_MEGABYTES = 10GB
