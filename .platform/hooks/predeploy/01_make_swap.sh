@@ -5,7 +5,8 @@ SWAP_BLOCKS=126
 SWAP_BLOCK_MEGABYTES=128M
 
 if [ -f $SWAPFILE ]; then
-	echo "Swapfile $SWAPFILE found, assuming already setup"
+  # NO OUTPUT
+#	echo "Swapfile $SWAPFILE found, assuming already setup"
 	exit;
 fi
 
