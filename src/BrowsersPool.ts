@@ -10,7 +10,7 @@ import {
 import stealth from "./modules/stealth";
 import Task, {TaskTimes, DONE as TaskDONE, FAIL as TaskFAIL} from "./Task";
 import URL from "url";
-import OS, {type} from "os";
+import OS from "os";
 import {Stats} from "./Stats";
 import Context from "./Context";
 
@@ -35,7 +35,8 @@ export interface BrowsersList {
 }
 
 export interface RunOptions {
-    MAX_WORKERS: number | null,
+    MIN_FREE_MEM: number,
+    MAX_WORKERS_PER_CORE: number,
     BROWSER: keyof BrowsersList,
     INLINE: InlineOptions
 }
@@ -44,7 +45,9 @@ export default class BrowsersPool {
 
     private browser: ChromiumBrowser | FirefoxBrowser | WebKitBrowser | null = null;
 
+    private readonly minFreeMem: number;
     private readonly maxWorkers: number;
+
     private tasksQueue: Task[] = [];
     private taskManager: NodeJS.Timeout | null = null;
 
@@ -59,7 +62,6 @@ export default class BrowsersPool {
 
     private modules = {
         URL: URL,
-        // pss: promiseSafeSync,
         stealth: stealth,
     };
 
@@ -68,27 +70,8 @@ export default class BrowsersPool {
         //Stats init
         stats.setContexts(this.contexts);
         this.stats = stats;
-
-        //Max Workers
-        if (typeof runOptions.MAX_WORKERS === "number" && runOptions.MAX_WORKERS >= 1) {
-            this.maxWorkers = runOptions.MAX_WORKERS;
-            // @ts-ignore
-            if (process.env.PW_TASK_WORKERS !== undefined && envOverwrite && parseInt(process.env.PW_TASK_WORKER) >= 1) {
-                // @ts-ignore
-                this.maxWorkers = parseInt(process.env.PW_TASK_WORKER);
-            }
-        }// @ts-ignore
-        else if (process.env.PW_TASK_WORKERS !== undefined && parseInt(process.env.PW_TASK_WORKER) >= 1) {
-            // @ts-ignore
-            this.maxWorkers = parseInt(process.env.PW_TASK_WORKER);
-        } else if (OS.cpus().length >= 1) {
-            this.maxWorkers = OS.cpus().length * 12;
-        } else {
-            console.log(`Wrong maxWorkers: ${runOptions.MAX_WORKERS}`);
-            console.log(`Dying`);
-            process.exit(1);
-        }
-
+        this.minFreeMem = runOptions.MIN_FREE_MEM;
+        this.maxWorkers = runOptions.MAX_WORKERS_PER_CORE * OS.cpus().length;
 
         //Proxy
         if (runOptions.INLINE.proxy === null && process.env.PW_TASK_PROXY !== undefined) {
@@ -102,7 +85,6 @@ export default class BrowsersPool {
             runOptions.INLINE.proxy = undefined;
         }
 
-
         //Browser name checker
         if (runOptions.BROWSER === 'chromium' || runOptions.BROWSER === 'firefox' || runOptions.BROWSER === 'webkit') {
             this.runOptions = runOptions;
@@ -112,8 +94,6 @@ export default class BrowsersPool {
             console.log(`Dying`);
             process.exit(1);
         }
-
-
     }
 
     public removeContext(context: Context) {
@@ -149,9 +129,8 @@ export default class BrowsersPool {
     public async runTaskManager() {
         console.log('Running Task Manager');
 
-
         this.taskManager = setInterval(() => {
-            if (this.browser !== null && this.contexts.length < this.maxWorkers) {
+            if (this.browser !== null && this.maxWorkers >= this.getContextsLength() && OS.freemem() >= this.minFreeMem) {
                 //@ts-ignore
                 let task: Task = this.tasksQueue.shift();
                 if (task !== undefined) {
@@ -208,7 +187,8 @@ export default class BrowsersPool {
                             if (typeof e.message === 'string' && e.message.indexOf('Target.createBrowserContext') >= 0) {
                                 this.runBrowser();
                                 this.tasksQueue.push(task);
-                            } else {
+                            }
+                            else {
                                 if (typeof e.message === 'string' && e.name === 'TimeoutError') {
                                     errorMsg = 'TimeOut in script';
                                     this.stats.addTimeout();
@@ -224,10 +204,15 @@ export default class BrowsersPool {
                             }
                         });
                 }
-            } else if (this.contexts.length >= this.maxWorkers) {
-                console.warn('contextsCounter! Waiting');
             }
-        }, 10);
+            else if (this.browser === null) {
+                console.warn('No browser! Error');
+                process.exit(1);
+            }
+            else if (this.maxWorkers <= this.getContextsLength() && OS.freemem() <= this.minFreeMem) {
+                console.warn('No free resources! Waiting');
+            }
+        }, 100);
         console.log('Runned Task Manager');
     }
 
@@ -258,7 +243,7 @@ export default class BrowsersPool {
         return this.tasksQueue.length;
     }
 
-    public getWorkersCount(): number {
-        return this.maxWorkers;
+    public getContextsLength(): number {
+        return this.contexts.length;
     }
 }
