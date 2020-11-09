@@ -1,80 +1,62 @@
-/**
- * @module playwright-addons/stealth
- */
-import {fileURLToPath} from 'url';
-import {dirname} from 'path';
-import {appendFileSync} from 'fs';
-import {BrowserContext} from "playwright";
+// @ts-ignore
+import * as config from "./../../config.json";
+import {BrowserContext} from "playwright-core";
 import * as fs from "fs";
+import {strict} from "assert";
 
 /**
  * Enable the stealth add-on
  * @param context
- * @param browserName
  */
-export default async function (context: BrowserContext, browserName: string) {
+export default async function (context: BrowserContext) {
 
     // Init evasions script on every page load
-    // @ts-ignore
-
     let evasionsScript = fs.readFileSync(__dirname + "/" + 'evasions.js').toString();
     await context.addInitScript(evasionsScript);
 
     // Properly set UA info (vanilla Playwright only sets the UA)
-    // @ts-ignore
-    const userAgent = context._options.userAgent || '';
+
+    let userAgent = 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/86.0.4240.111 Safari/537.36';
+
+    config.RUN_OPTIONS.INLINE.args.forEach( arg => {
+       let argDetails = arg.split('=', 2);
+       if (argDetails[0] === '--user-agent' && typeof argDetails[1] === 'string') {
+           userAgent = JSON.parse(argDetails[1]).trim();
+       }
+    });
+
     // @ts-ignore
     const acceptLanguage = context._options.locale;
     const platform = userAgent.indexOf('Macintosh') !== -1 ? 'MacIntel' : (userAgent.indexOf('Windows') !== -1 ? 'Win32' : '');
+    // @ts-ignore
     const oscpu = userAgent.match('(Intel.*?|Windows.*?)[;)]') ? userAgent.match('(Intel.*?|Windows.*?)[;)]')[1] : '';
     const userAgentMetadata = undefined; // TODO, see https://chromedevtools.github.io/devtools-protocol/tot/Emulation/#type-UserAgentMetadata
 
-    // Firefox - write to prefs
-    if (browserName.indexOf('FFBrowser') === 0) {
-        let prefs = `
-                user_pref("general.appversion.override", "` + userAgent.replace('Mozilla/', '') + `");
-                user_pref("general.oscpu.override", "` + oscpu + `");
-                user_pref("general.platform.override", "` + platform + `");
-                user_pref("general.useragent.override", "` + userAgent + `");
-                `;
-        if (acceptLanguage) {
-            prefs += `
-                    user_pref("general.useragent.locale", "` + acceptLanguage + `");
-                    user_pref("intl.accept_languages", "` + acceptLanguage + `");
-                    `;
-        }
-    } else { // Chromium - use CDP to override
-        for (const page of context.pages()) {
-            try {
-                console.log(page);
 
-                // @ts-ignore
-                (await page.context().newCDPSession(page))
-                    .send('Emulation.setUserAgentOverride', {
-                        userAgent,
-                        acceptLanguage,
-                        platform,
-                        userAgentMetadata
-                    });
-            } catch (e) {
-                console.log('Warning: could not set UA override:', e);
-            }
+    context.on('page', async page => {
+        // Chromium - use CDP to override
+        try {
+            // @ts-ignore
+            (await page.context().newCDPSession(page))
+                .send('Emulation.setUserAgentOverride', {
+                    userAgent,
+                    acceptLanguage,
+                    platform,
+                    userAgentMetadata
+                });
+        } catch (e) {
+            console.log('Warning: could not set UA override:', e);
         }
 
-        context.on('page', async page => {
-            try {
-                // @ts-ignore
-                (await page.context().newCDPSession(page))
-                    .send('Emulation.setUserAgentOverride', {
-                        userAgent,
-                        acceptLanguage,
-                        platform,
-                        userAgentMetadata
-                    });
-            } catch (e) {
-                console.log('Warning: could not set UA override:', e);
-            }
-        });
+        try {
+            await page.setExtraHTTPHeaders({
+                'Accept-Language': 'en-GB,en-US;q=0.9,en;q=0.8'
+            });
+        }
+        catch (e) {
 
-    }
+        }
+
+
+    });
 }

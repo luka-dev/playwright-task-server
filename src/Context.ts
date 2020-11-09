@@ -1,4 +1,4 @@
-import {BrowserContext} from "playwright";
+import {BrowserContext} from "playwright-core";
 
 export default class Context {
 

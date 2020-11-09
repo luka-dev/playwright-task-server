@@ -3,11 +3,11 @@
   "SERVER_PORT": 8080,
   "ENV_OVERWRITE": true,
   "RUN_OPTIONS": {
-    "MAX_WORKERS": null,
-    "BROWSER": "chromium",
+    "WORKERS_PER_CPU": 12,
     "INLINE": {
       "timeout": 30000,
       "args": [
+        "--disable-blink-features=AutomationControlled",
         "--enable-features=NetworkService",
         "--allow-running-insecure-content",
         "--disable-web-security",
@@ -20,7 +20,6 @@
         "--disable-cloud-import",
         "--disable-default-apps",
         "--disable-dev-shm-usage",
-        "--disable-extensions",
         "--disable-gesture-typing",
         "--disable-gpu",
         "--disable-hang-monitor",
@@ -44,7 +43,6 @@
         "--enable-simple-cache-backend",
         "--enable-tcp-fast-open",
         "--hide-scrollbars",
-        "--media-cache-size=33554432",
         "--metrics-recording-only",
         "--mute-audio",
         "--no-default-browser-check",
@@ -55,16 +53,12 @@
         "--password-store=basic",
         "--prerender-from-omnibox=disabled",
         "--use-mock-keychain",
-        "--user-agent=\"Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/85.0.4183.121 Safari/537.36\""
+        "--lang=\"en-GB\"",
+        "--user-agent=\"Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/86.0.4240.111 Safari/537.36\""
       ],
       "headless": true,
       "slowMo": 0,
-      "proxy": {
-        "server": "mixed.rotating.proxyrack.net:444",
-        "bypass": "",
-        "username": "stefrogovskiy",
-        "password": "e70600-8cda60-46ee46-406b0d-b42660"
-      }
+      "proxy": null
     }
   }
 }

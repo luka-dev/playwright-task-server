@@ -1,48 +1,24 @@
 import {
     ChromiumBrowser,
-    FirefoxBrowser,
-    WebKitBrowser,
-    BrowserType,
-    chromium,
-    firefox,
-    webkit
-} from "playwright";
+    LaunchOptions,
+} from "playwright-core";
+import {chromium} from "playwright-chromium";
 import stealth from "./modules/stealth";
 import Task, {TaskTimes, DONE as TaskDONE, FAIL as TaskFAIL} from "./Task";
 import URL from "url";
-import OS, {type} from "os";
+import OS from "os";
 import {Stats} from "./Stats";
 import Context from "./Context";
 
-export interface BrowserTypeLaunchOptionsProxy {
-    "server": string,
-    "bypass": string,
-    "username": string,
-    "password": string
-}
-
-export interface InlineOptions {
-    args: string[],
-    headless: boolean,
-    slowMo: number,
-    proxy: BrowserTypeLaunchOptionsProxy | null | undefined
-}
-
-export interface BrowsersList {
-    chromium: BrowserType<ChromiumBrowser>,
-    firefox: BrowserType<FirefoxBrowser>,
-    webkit: BrowserType<WebKitBrowser>,
-}
 
 export interface RunOptions {
-    MAX_WORKERS: number | null,
-    BROWSER: keyof BrowsersList,
-    INLINE: InlineOptions
+    WORKERS_PER_CPU: number,
+    INLINE: LaunchOptions
 }
 
 export default class BrowsersPool {
 
-    private browser: ChromiumBrowser | FirefoxBrowser | WebKitBrowser | null = null;
+    private browser: ChromiumBrowser | null = null;
 
     private readonly maxWorkers: number;
     private tasksQueue: Task[] = [];
@@ -53,14 +29,14 @@ export default class BrowsersPool {
     private contexts: Context[] = [];
 
     private stats: Stats;
-    private readonly runOptions: RunOptions;
+    private readonly launchOptions: LaunchOptions;
 
     private browserRunnerFlag: boolean = false;
 
     private modules = {
         URL: URL,
         // pss: promiseSafeSync,
-        stealth: stealth,
+        // stealth: stealth,
     };
 
     public constructor(stats: Stats, runOptions: RunOptions, envOverwrite: boolean = false) {
@@ -69,26 +45,9 @@ export default class BrowsersPool {
         stats.setContexts(this.contexts);
         this.stats = stats;
 
-        //Max Workers
-        if (typeof runOptions.MAX_WORKERS === "number" && runOptions.MAX_WORKERS >= 1) {
-            this.maxWorkers = runOptions.MAX_WORKERS;
-            // @ts-ignore
-            if (process.env.PW_TASK_WORKERS !== undefined && envOverwrite && parseInt(process.env.PW_TASK_WORKER) >= 1) {
-                // @ts-ignore
-                this.maxWorkers = parseInt(process.env.PW_TASK_WORKER);
-            }
-        }// @ts-ignore
-        else if (process.env.PW_TASK_WORKERS !== undefined && parseInt(process.env.PW_TASK_WORKER) >= 1) {
-            // @ts-ignore
-            this.maxWorkers = parseInt(process.env.PW_TASK_WORKER);
-        } else if (OS.cpus().length >= 1) {
-            this.maxWorkers = OS.cpus().length * 12;
-        } else {
-            console.log(`Wrong maxWorkers: ${runOptions.MAX_WORKERS}`);
-            console.log(`Dying`);
-            process.exit(1);
-        }
+        this.launchOptions = runOptions.INLINE;
 
+        this.maxWorkers = runOptions.WORKERS_PER_CPU * OS.cpus().length;
 
         //Proxy
         if (runOptions.INLINE.proxy === null && process.env.PW_TASK_PROXY !== undefined) {
@@ -104,16 +63,7 @@ export default class BrowsersPool {
 
 
         //Browser name checker
-        if (runOptions.BROWSER === 'chromium' || runOptions.BROWSER === 'firefox' || runOptions.BROWSER === 'webkit') {
-            this.runOptions = runOptions;
-            this.runBrowser();
-        } else {
-            console.log(`Wrong browser type: ${runOptions.BROWSER}`);
-            console.log(`Dying`);
-            process.exit(1);
-        }
-
-
+        this.runBrowser();
     }
 
     public removeContext(context: Context) {
@@ -126,18 +76,9 @@ export default class BrowsersPool {
         if (!this.browserRunnerFlag) {
             this.browserRunnerFlag = true;
 
-            let browsersList: BrowsersList = {
-                chromium: chromium,
-                webkit: webkit,
-                firefox: firefox,
-            }
-
             try {
-                // @ts-ignore
-                this.browser = await browsersList[this.runOptions.BROWSER].launch(this.runOptions.INLINE);
-            }
-                // @ts-ignore
-            catch (e: any) {
+                this.browser = await chromium.launch(this.launchOptions);
+            } catch (e) {
                 console.log(`Error in running browser: ${e}`);
                 console.log(`Dying`);
                 process.exit(1);
@@ -149,10 +90,9 @@ export default class BrowsersPool {
     public async runTaskManager() {
         console.log('Running Task Manager');
 
-
         this.taskManager = setInterval(() => {
             if (this.browser !== null && this.contexts.length < this.maxWorkers) {
-                //@ts-ignore
+                //@ts-ignore fix for ${task.getScript()}
                 let task: Task = this.tasksQueue.shift();
                 if (task !== undefined) {
                     task.setRunTime((new Date()).getTime());
@@ -166,8 +106,8 @@ export default class BrowsersPool {
                             // @ts-ignore
                             const context = await this.browser.newContext();
                             statsContext.setBrowserContext(context);
-                            // @ts-ignore
-                            await this.modules.stealth(context, this.browser.constructor.name);
+
+                            await stealth(context); //run stealth scripts
 
                             let script = new Function('context', 'modules',
                                 `return new Promise(async (resolve, reject) => {

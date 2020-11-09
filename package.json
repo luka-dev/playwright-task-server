@@ -38,7 +38,8 @@
     "cors": "^2.8.5",
     "express": "^4.17.1",
     "helmet": "^3.23.3",
-    "playwright": "^1.2.1",
+    "playwright-chromium": "^1.5.2",
+    "playwright-core": "^1.5.2",
     "request": "^2.88.2",
     "request-promise": "^4.2.6",
     "sleep": "^6.3.0"
