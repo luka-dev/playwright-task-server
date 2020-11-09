@@ -1,6 +1,5 @@
 import {
-    ChromiumBrowser,
-    LaunchOptions,
+    ChromiumBrowser
 } from "playwright-core";
 import {chromium} from "playwright-chromium";
 import stealth from "./modules/stealth";
@@ -11,9 +10,27 @@ import {Stats} from "./Stats";
 import Context from "./Context";
 
 
+export interface InlineLaunchOptions
+{
+    headless?: boolean;
+    executablePath?: string;
+    args?: Array<string>;
+    ignoreDefaultArgs?: boolean|Array<string>;
+    proxy:null|undefined|{
+        server: string;
+        bypass?: string;
+        username?: string;
+        password?: string;
+    };
+    downloadsPath?: string;
+    timeout?: number;
+    devtools?: boolean;
+    slowMo?: number;
+}
+
 export interface RunOptions {
     WORKERS_PER_CPU: number,
-    INLINE: LaunchOptions
+    INLINE: InlineLaunchOptions
 }
 
 export default class BrowsersPool {
@@ -29,7 +46,7 @@ export default class BrowsersPool {
     private contexts: Context[] = [];
 
     private stats: Stats;
-    private readonly launchOptions: LaunchOptions;
+    private readonly launchOptions: InlineLaunchOptions;
 
     private browserRunnerFlag: boolean = false;
 
@@ -77,6 +94,7 @@ export default class BrowsersPool {
             this.browserRunnerFlag = true;
 
             try {
+                // @ts-ignore
                 this.browser = await chromium.launch(this.launchOptions);
             } catch (e) {
                 console.log(`Error in running browser: ${e}`);
