@@ -11,9 +11,12 @@ export default class Task {
 
     private readonly script: string;
     private readonly options: object
+
     private readonly createTime: number;
-    private readonly callback: (scriptStatus: string, scriptReturn: object, times: TaskTimes) => void;
     private runTime: number | null = null;
+    private doneTime: number | null = null;
+
+    private readonly callback: (scriptStatus: string, scriptReturn: object, times: TaskTimes) => void;
 
     public constructor(script: string, callback: (scriptStatus: string, scriptReturn: object, times: TaskTimes) => void, browserContextOptions: object) {
         this.script = script;
@@ -38,12 +41,24 @@ export default class Task {
         return {
           created_at: this.getCreateTime(),
           runed_at: this.getRunTime(),
-          done_at: null,
+          done_at: this.getDoneTime(),
         };
     }
 
-    public setRunTime(timestamp: number) {
+    public setRunTime(timestamp: number|null = null) {
+        if (timestamp === null) {
+            timestamp = (new Date).getTime();
+        }
+
         this.runTime = timestamp;
+    }
+
+    public setDoneTime(timestamp: number|null = null) {
+        if (timestamp === null) {
+            timestamp = (new Date).getTime();
+        }
+
+        this.doneTime = timestamp;
     }
 
     public getCreateTime(): number {
@@ -53,4 +68,8 @@ export default class Task {
     public getRunTime(): number | null {
         return this.runTime;
     }
+    public getDoneTime(): number | null {
+        return this.doneTime;
+    }
+
 }

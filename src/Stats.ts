@@ -5,6 +5,10 @@ export class Stats {
     private totalTasksSuccessful: number = 0;
     private totalTasksFailed: number = 0;
     private totalTasksTimeout: number = 0;
+
+    private taskPendingTotal: number = 0;
+    private taskProcessingTotal: number = 0;
+
     private contexts: Context[] = [];
 
 
@@ -30,6 +34,14 @@ export class Stats {
         this.totalTasksTimeout++;
     }
 
+    public addTaskPending(time: number): void {
+        this.taskPendingTotal += time;
+    }
+
+    public addTaskProcessing(time: number): void {
+        this.taskProcessingTotal += time;
+    }
+
     public getTotalTasks(): number {
         return this.totalTasks;
     }
@@ -48,6 +60,13 @@ export class Stats {
 
     public getRunnedAt(): number {
         return this.runnedAt;
+    }
+
+    public getTaskPendingAvg(): number {
+        return this.taskPendingTotal / (this.totalTasksSuccessful + this.totalTasksFailed + this.totalTasksTimeout);
+    }
+    public getTaskProcessingAvg(): number {
+        return this.taskProcessingTotal / (this.totalTasksSuccessful + this.totalTasksFailed + this.totalTasksTimeout);
     }
 
     public setContexts(contexts: Context[]): void {

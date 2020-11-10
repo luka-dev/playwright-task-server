@@ -20,7 +20,7 @@ export default class Context {
 
     public async closeContext() {
         if (this.browserContext !== null) {
-            this.browserContext.close()
+            await this.browserContext.close()
             return true;
         }
         return false;

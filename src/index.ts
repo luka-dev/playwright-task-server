@@ -4,12 +4,16 @@ import {WebServer} from "./WebServer";
 import BrowsersPool, {RunOptions} from "./BrowsersPool";
 import OS from "os";
 import {Stats} from "./Stats";
-import Task, {TaskTimes} from "./Task";
+import {TaskTimes} from "./Task";
 
 const stats = new Stats();
 
 const browsersPool = new BrowsersPool(stats, <RunOptions>config.RUN_OPTIONS, config.ENV_OVERWRITE);
-browsersPool.runTaskManager();
+
+(async () => {
+    await browsersPool.runBrowser();
+    await browsersPool.runTaskManager();
+})();
 
 const webServer = new WebServer(config.SERVER_PORT, config.ENV_OVERWRITE);
 
@@ -23,35 +27,49 @@ webServer.get('/', (request, response) => {
 
 webServer.get('/stats', (request, response) => {
     response.json({
-        tasks: {
+
+        requests: {
             total: stats.getTotalTasks(),
+            processed: stats.getTotalTasksSuccessful() + stats.getTotalTasksFailed() + stats.getTotalTasksTimeout(),
             successful: stats.getTotalTasksSuccessful(),
             failed: stats.getTotalTasksFailed(),
             timeout: stats.getTotalTasksTimeout()
         },
-        queue: browsersPool.getQueueLength(),
-        workers: browsersPool.getWorkersCount(),
-        uptime: OS.uptime(),
+
+        handlers: {
+            queue: browsersPool.getQueueLength(),
+            contexts: stats.getContextsLength(),
+            workers: browsersPool.getWorkersCount(),
+            pending_avg: stats.getTaskPendingAvg(),
+            processing_avg: stats.getTaskProcessingAvg(),
+        },
+
+        server: {
+            uptime: OS.uptime(),
+            platform: OS.platform(),
+            arch: OS.arch()
+        },
+
         hardware: {
-            cpu: {
-                avg: {
-                    '1': OS.loadavg()[0],
-                    '5': OS.loadavg()[1],
-                    '15': OS.loadavg()[2]
-                }
+            cpus: OS.cpus(),
+            ram: {
+                total: OS.totalmem(),
+                current: OS.totalmem() - OS.freemem(),
             }
         },
-        ram: {
-            total: OS.totalmem(),
-            current: OS.totalmem() - OS.freemem(),
-        }
+
     })
 });
 
 webServer.post(`/task`, (request, response) => {
     if (typeof request.body.script === 'string') {
         browsersPool.addTask(request.body.script, (scriptStatus: string, scriptReturn = {}, times: TaskTimes) => {
-            times.done_at = (new Date).getTime();
+
+            // @ts-ignore already cant be null, we setted this value
+            stats.addTaskPending(times.runed_at - times.created_at);
+            // @ts-ignore already cant be null, we setted this value
+            stats.addTaskProcessing(times.done_at - times.runed_at);
+
             response.json({
                 status: scriptStatus,
                 metadata: {

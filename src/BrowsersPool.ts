@@ -1,13 +1,13 @@
 import {
-    ChromiumBrowser
+    FirefoxBrowser
 } from "playwright-core";
-import {chromium} from "playwright-chromium";
-import stealth from "./modules/stealth";
+import {firefox} from "playwright-firefox";
 import Task, {TaskTimes, DONE as TaskDONE, FAIL as TaskFAIL} from "./Task";
 import URL from "url";
 import OS from "os";
 import {Stats} from "./Stats";
 import Context from "./Context";
+import {contextStealth} from "./modules/stealth";
 
 
 export interface InlineLaunchOptions
@@ -22,7 +22,7 @@ export interface InlineLaunchOptions
         username?: string;
         password?: string;
     };
-    downloadsPath?: string;
+    firefoxUserPrefs?: object;
     timeout?: number;
     devtools?: boolean;
     slowMo?: number;
@@ -30,12 +30,14 @@ export interface InlineLaunchOptions
 
 export interface RunOptions {
     WORKERS_PER_CPU: number,
+    // UA: string;
+    // LOCALE: string;
     INLINE: InlineLaunchOptions
 }
 
 export default class BrowsersPool {
 
-    private browser: ChromiumBrowser | null = null;
+    private browser: FirefoxBrowser | null = null;
 
     private readonly maxWorkers: number;
     private tasksQueue: Task[] = [];
@@ -52,8 +54,6 @@ export default class BrowsersPool {
 
     private modules = {
         URL: URL,
-        // pss: promiseSafeSync,
-        // stealth: stealth,
     };
 
     public constructor(stats: Stats, runOptions: RunOptions, envOverwrite: boolean = false) {
@@ -95,7 +95,7 @@ export default class BrowsersPool {
 
             try {
                 // @ts-ignore
-                this.browser = await chromium.launch(this.launchOptions);
+                this.browser = await firefox.launch(this.launchOptions);
             } catch (e) {
                 console.log(`Error in running browser: ${e}`);
                 console.log(`Dying`);
@@ -109,14 +109,13 @@ export default class BrowsersPool {
         console.log('Running Task Manager');
 
         this.taskManager = setInterval(() => {
-            if (this.browser !== null && this.contexts.length < this.maxWorkers) {
+            if (this.browser !== null && this.browser.isConnected() && this.contexts.length < this.maxWorkers) {
                 //@ts-ignore fix for ${task.getScript()}
                 let task: Task = this.tasksQueue.shift();
                 if (task !== undefined) {
-                    task.setRunTime((new Date()).getTime());
+                    task.setRunTime();
 
                     let statsContext = new Context();
-
                     this.contexts.push(statsContext);
 
                     (new Promise<any>(async (resolve, reject) => {
@@ -125,7 +124,7 @@ export default class BrowsersPool {
                             const context = await this.browser.newContext();
                             statsContext.setBrowserContext(context);
 
-                            await stealth(context); //run stealth scripts
+                            await contextStealth(context);
 
                             let script = new Function('context', 'modules',
                                 `return new Promise(async (resolve, reject) => {
@@ -145,10 +144,11 @@ export default class BrowsersPool {
                             reject(e);
                         }
                     }))
-                        .then((response: object) => {
+                        .then(async (response: object) => {
+                            await statsContext.closeContext();
                             this.stats.addSuccess();
-                            statsContext.closeContext();
                             this.removeContext(statsContext)
+                            task.setDoneTime();
 
                             if (typeof response !== 'object') {
                                 response = {response};
@@ -156,34 +156,49 @@ export default class BrowsersPool {
 
                             task.getCallback()(TaskDONE, response, task.getTaskTime());
                         })
-                        .catch((e: Error) => {
-                            statsContext.closeContext();
+                        .catch( async (e: any) => {
+                            await statsContext.closeContext();
                             this.removeContext(statsContext)
+                            task.setDoneTime();
 
-                            let errorMsg = 'Fail in script calling (runTask)';
-
-                            //if browser not runned
-                            if (typeof e.message === 'string' && e.message.indexOf('Target.createBrowserContext') >= 0) {
-                                this.runBrowser();
-                                this.tasksQueue.push(task);
-                            } else {
-                                if (typeof e.message === 'string' && e.name === 'TimeoutError') {
-                                    errorMsg = 'TimeOut in script';
-                                    this.stats.addTimeout();
+                            if (e instanceof Error) {
+                                if (e.message.indexOf('Target.createBrowserContext') >= 0) {
+                                    //no runed browser, rerunning doing task
+                                    await this.runBrowser();
+                                    this.tasksQueue.push(task);
                                 } else {
-                                    this.stats.addFail();
-                                }
+                                    let errorMsg = 'Fail in script calling (runTask)';
 
+                                    if (e.name === 'TimeoutError') {
+                                        errorMsg = 'TimeOut in script';
+                                        this.stats.addTimeout();
+                                    } else {
+                                        this.stats.addFail();
+                                    }
+
+                                    task.getCallback()(TaskFAIL, {
+                                        'error': errorMsg,
+                                        'log': e.toString(),
+                                        'stack': e.stack
+                                    }, task.getTaskTime());
+                                }
+                            }
+                            else {
                                 task.getCallback()(TaskFAIL, {
-                                    'error': errorMsg,
-                                    'log': e.toString(),
-                                    'stack': e.stack,
+                                    'error': 'Fail in script calling (runTask)',
+                                    'log': JSON.stringify(e),
+                                    'stack': 'Not an instance of Error',
                                 }, task.getTaskTime());
                             }
                         });
                 }
             } else if (this.contexts.length >= this.maxWorkers) {
                 console.warn('contextsCounter! Waiting');
+            } else if (this.browser !== null && !this.browser.isConnected()) {
+                this.stopTaskManager();
+                this.runBrowser();
+                this.runTaskManager();
+                console.warn('browser is dead! rerunning');
             }
         }, 10);
         console.log('Runned Task Manager');

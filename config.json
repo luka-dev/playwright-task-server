@@ -52,10 +52,16 @@
         "--no-zygote",
         "--password-store=basic",
         "--prerender-from-omnibox=disabled",
-        "--use-mock-keychain",
-        "--lang=\"en-GB\"",
-        "--user-agent=\"Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/86.0.4240.111 Safari/537.36\""
+        "--use-mock-keychain"
       ],
+      "firefoxUserPrefs": {
+        "general.appversion.override": "5.0 (Macintosh; Intel Mac OS X 10.15; rv:82.0) Gecko/20100101 Firefox/82.0",
+        "general.oscpu.override": "Intel Mac OS X 10.15",
+        "general.platform.override": "Macintosh",
+        "general.useragent.override": "Mozilla/5.0 (Macintosh; Intel Mac OS X 10.15; rv:82.0) Gecko/20100101 Firefox/82.0",
+        "general.useragent.locale": "en-US",
+        "intl.accept_languages": "en-US"
+      },
       "headless": true,
       "slowMo": 0,
       "proxy": null
