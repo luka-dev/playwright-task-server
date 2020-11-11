@@ -454,6 +454,18 @@
         )
     };
 
+
+//UA Entropy values
+    try {
+        navigator.userAgentData.getHighEntropyValues([
+            "platform",
+            "platformVersion",
+            "architecture",
+            "model",
+            "uaFullVersion"
+        ]);
+    } catch (e) {}
+
 // Fake webGL vendor + renderer
     try {
         // Remove traces of our Proxy ;-)
@@ -509,6 +521,26 @@
         })
     } catch (e) {}
 
+//overwrite acceptable languages
+    try {
+        Object.defineProperty(navigator, "languages", {
+            get: function () {
+                return ["en-GB", "en"];
+            }
+        });
+    } catch (e) {}
+
+//overwrite the `plugins` property to use a custom getter
+//todo https://github.com/berstend/puppeteer-extra/tree/master/packages/puppeteer-extra-plugin-stealth/evasions/navigator.plugins
+    try {
+        Object.defineProperty(navigator, 'plugins', {
+            get: function () {
+                // this just needs to have `length > 0`, but we could mock the plugins too
+                return [1, 2, 3, 4, 5];
+            },
+        });
+    } catch (e) {}
+
 // Fake hairline feature, see https://github.com/Niek/playwright-addons/issues/2
     try {
         const _osH = Object.getOwnPropertyDescriptor(HTMLElement.prototype, 'offsetHeight');
@@ -520,6 +552,444 @@
         })
     } catch (e) {}
 
+
+//window.chrome + .app
+    try {
+        if (!window.chrome) {
+            // Use the exact property descriptor found in headful Chrome
+            // fetch it via `Object.getOwnPropertyDescriptor(window, 'chrome')`
+            Object.defineProperty(window, 'chrome', {
+                writable: true,
+                enumerable: true,
+                configurable: false, // note!
+                value: {} // We'll extend that later
+            })
+        }
+
+        // That means we're running headful and don't need to mock anything
+        if ('app' in window.chrome) {
+            return // Nothing to do here
+        }
+
+        const makeError = {
+            ErrorInInvocation: fn => {
+                const err = new TypeError(`Error in invocation of app.${fn}()`)
+                return utils.stripErrorWithAnchor(
+                    err,
+                    `at ${fn} (eval at <anonymous>`
+                )
+            }
+        }
+
+        // There's a some static data in that property which doesn't seem to change,
+        // we should periodically check for updates: `JSON.stringify(window.app, null, 2)`
+        const STATIC_DATA = {
+            isInstalled: false,
+            InstallState: {
+                DISABLED: "disabled",
+                INSTALLED: "installed",
+                NOT_INSTALLED: "not_installed"
+            },
+            RunningState: {
+                CANNOT_RUN: "cannot_run",
+                READY_TO_RUN: "ready_to_run",
+                RUNNING: "running"
+            }
+        };
+
+        window.chrome.app = {
+            ...STATIC_DATA,
+
+            get isInstalled() {
+                return false;
+            },
+
+            getDetails: function getDetails() {
+                if (arguments.length) {
+                    throw makeError.ErrorInInvocation(`getDetails`);
+                }
+                return null;
+            },
+            getIsInstalled: function getDetails() {
+                if (arguments.length) {
+                    throw makeError.ErrorInInvocation(`getIsInstalled`);
+                }
+                return false;
+            },
+            runningState: function getDetails() {
+                if (arguments.length) {
+                    throw makeError.ErrorInInvocation(`runningState`);
+                }
+                return 'cannot_run';
+            }
+        }
+        utils.patchToStringNested(window.chrome.app);
+    } catch (e) {}
+
+//window.chrome.csi
+    try {
+        if (!window.chrome) {
+            // Use the exact property descriptor found in headful Chrome
+            // fetch it via `Object.getOwnPropertyDescriptor(window, 'chrome')`
+            Object.defineProperty(window, 'chrome', {
+                writable: true,
+                enumerable: true,
+                configurable: false, // note!
+                value: {} // We'll extend that later
+            })
+        }
+
+        // That means we're running headful and don't need to mock anything
+        if ('csi' in window.chrome) {
+            return // Nothing to do here
+        }
+
+        // Check that the Navigation Timing API v1 is available, we need that
+        if (!window.performance || !window.performance.timing) {
+            return
+        }
+
+        const {timing} = window.performance
+
+        window.chrome.csi = function () {
+            return {
+                onloadT: timing.domContentLoadedEventEnd,
+                startE: timing.navigationStart,
+                pageT: Date.now() - timing.navigationStart,
+                tran: 15 // Transition type or something
+            }
+        }
+        utils.patchToString(window.chrome.csi);
+    } catch (e) {}
+
+//window.chrome.loadTimes
+    try {
+        if (!window.chrome) {
+            // Use the exact property descriptor found in headful Chrome
+            // fetch it via `Object.getOwnPropertyDescriptor(window, 'chrome')`
+            Object.defineProperty(window, 'chrome', {
+                writable: true,
+                enumerable: true,
+                configurable: false, // note!
+                value: {} // We'll extend that later
+            })
+        }
+
+        // That means we're running headful and don't need to mock anything
+        if ('loadTimes' in window.chrome) {
+            return // Nothing to do here
+        }
+
+        // Check that the Navigation Timing API v1 + v2 is available, we need that
+        if (
+            !window.performance ||
+            !window.performance.timing ||
+            !window.PerformancePaintTiming
+        ) {
+            return
+        }
+
+        const {performance} = window
+
+        // Some stuff is not available on about:blank as it requires a navigation to occur,
+        // let's harden the code to not fail then:
+        const ntEntryFallback = {
+            nextHopProtocol: 'h2',
+            type: 'other'
+        }
+
+        // The API exposes some funky info regarding the connection
+        const protocolInfo = {
+            get connectionInfo() {
+                const ntEntry =
+                    performance.getEntriesByType('navigation')[0] || ntEntryFallback
+                return ntEntry.nextHopProtocol
+            },
+            get npnNegotiatedProtocol() {
+                // NPN is deprecated in favor of ALPN, but this implementation returns the
+                // HTTP/2 or HTTP2+QUIC/39 requests negotiated via ALPN.
+                const ntEntry =
+                    performance.getEntriesByType('navigation')[0] || ntEntryFallback
+                return ['h2', 'hq'].includes(ntEntry.nextHopProtocol)
+                    ? ntEntry.nextHopProtocol
+                    : 'unknown'
+            },
+            get navigationType() {
+                const ntEntry =
+                    performance.getEntriesByType('navigation')[0] || ntEntryFallback
+                return ntEntry.type
+            },
+            get wasAlternateProtocolAvailable() {
+                // The Alternate-Protocol header is deprecated in favor of Alt-Svc
+                // (https://www.mnot.net/blog/2016/03/09/alt-svc), so technically this
+                // should always return false.
+                return false
+            },
+            get wasFetchedViaSpdy() {
+                // SPDY is deprecated in favor of HTTP/2, but this implementation returns
+                // true for HTTP/2 or HTTP2+QUIC/39 as well.
+                const ntEntry =
+                    performance.getEntriesByType('navigation')[0] || ntEntryFallback
+                return ['h2', 'hq'].includes(ntEntry.nextHopProtocol)
+            },
+            get wasNpnNegotiated() {
+                // NPN is deprecated in favor of ALPN, but this implementation returns true
+                // for HTTP/2 or HTTP2+QUIC/39 requests negotiated via ALPN.
+                const ntEntry =
+                    performance.getEntriesByType('navigation')[0] || ntEntryFallback
+                return ['h2', 'hq'].includes(ntEntry.nextHopProtocol)
+            }
+        }
+
+        const {timing} = window.performance
+
+        // Truncate number to specific number of decimals, most of the `loadTimes` stuff has 3
+        function toFixed(num, fixed) {
+            var re = new RegExp('^-?\\d+(?:.\\d{0,' + (fixed || -1) + '})?')
+            return num.toString().match(re)[0]
+        }
+
+        const timingInfo = {
+            get firstPaintAfterLoadTime() {
+                // This was never actually implemented and always returns 0.
+                return 0
+            },
+            get requestTime() {
+                return timing.navigationStart / 1000
+            },
+            get startLoadTime() {
+                return timing.navigationStart / 1000
+            },
+            get commitLoadTime() {
+                return timing.responseStart / 1000
+            },
+            get finishDocumentLoadTime() {
+                return timing.domContentLoadedEventEnd / 1000
+            },
+            get finishLoadTime() {
+                return timing.loadEventEnd / 1000
+            },
+            get firstPaintTime() {
+                const fpEntry = performance.getEntriesByType('paint')[0] || {
+                    startTime: timing.loadEventEnd / 1000 // Fallback if no navigation occured (`about:blank`)
+                }
+                return toFixed(
+                    (fpEntry.startTime + performance.timeOrigin) / 1000,
+                    3
+                )
+            }
+        }
+
+        window.chrome.loadTimes = function () {
+            return {
+                ...protocolInfo,
+                ...timingInfo
+            }
+        }
+        utils.patchToString(window.chrome.loadTimes);
+    } catch (e) {}
+
+//iframe content window
+    try {
+        const addContentWindowProxy = iframe => {
+            const contentWindowProxy = {
+                get(target, key) {
+                    // Now to the interesting part:
+                    // We actually make this thing behave like a regular iframe window,
+                    // by intercepting calls to e.g. `.self` and redirect it to the correct thing. :)
+                    // That makes it possible for these assertions to be correct:
+                    // iframe.contentWindow.self === window.top // must be false
+                    if (key === 'self') {
+                        return this
+                    }
+                    // iframe.contentWindow.frameElement === iframe // must be true
+                    if (key === 'frameElement') {
+                        return iframe
+                    }
+                    return Reflect.get(target, key)
+                }
+            }
+
+            if (!iframe.contentWindow) {
+                const proxy = new Proxy(window, contentWindowProxy)
+                Object.defineProperty(iframe, 'contentWindow', {
+                    get() {
+                        return proxy
+                    },
+                    set(newValue) {
+                        return newValue // contentWindow is immutable
+                    },
+                    enumerable: true,
+                    configurable: false
+                })
+            }
+        }
+
+        // Handles iframe element creation, augments `srcdoc` property so we can intercept further
+        const handleIframeCreation = (target, thisArg, args) => {
+            const iframe = target.apply(thisArg, args)
+
+            // We need to keep the originals around
+            const _iframe = iframe
+            const _srcdoc = _iframe.srcdoc
+
+            // Add hook for the srcdoc property
+            // We need to be very surgical here to not break other iframes by accident
+            Object.defineProperty(iframe, 'srcdoc', {
+                configurable: true, // Important, so we can reset this later
+                get: function () {
+                    return _iframe.srcdoc
+                },
+                set: function (newValue) {
+                    addContentWindowProxy(this)
+                    // Reset property, the hook is only needed once
+                    Object.defineProperty(iframe, 'srcdoc', {
+                        configurable: false,
+                        writable: false,
+                        value: _srcdoc
+                    })
+                    _iframe.srcdoc = newValue
+                }
+            })
+            return iframe
+        }
+
+        // Adds a hook to intercept iframe creation events
+        const addIframeCreationSniffer = () => {
+            /* global document */
+            const createElementHandler = {
+                // Make toString() native
+                get(target, key) {
+                    return Reflect.get(target, key)
+                },
+                apply: function (target, thisArg, args) {
+                    const isIframe =
+                        args && args.length && `${args[0]}`.toLowerCase() === 'iframe'
+                    if (!isIframe) {
+                        // Everything as usual
+                        return target.apply(thisArg, args)
+                    } else {
+                        return handleIframeCreation(target, thisArg, args)
+                    }
+                }
+            }
+            // All this just due to iframes with srcdoc bug
+            utils.replaceWithProxy(
+                document,
+                'createElement',
+                createElementHandler
+            )
+        }
+
+        // Let's go
+        addIframeCreationSniffer();
+    } catch (e) {}
+
+//media.codecs
+    try {
+        const parseInput = arg => {
+            const [mime, codecStr] = arg.trim().split(';')
+            let codecs = []
+            if (codecStr && codecStr.includes('codecs="')) {
+                codecs = codecStr
+                    .trim()
+                    .replace(`codecs="`, '')
+                    .replace(`"`, '')
+                    .trim()
+                    .split(',')
+                    .filter(x => !!x)
+                    .map(x => x.trim())
+            }
+            return {
+                mime,
+                codecStr,
+                codecs
+            }
+        }
+
+        const canPlayType = {
+            // Intercept certain requests
+            apply: function(target, ctx, args) {
+                if (!args || !args.length) {
+                    return target.apply(ctx, args)
+                }
+                const { mime, codecs } = parseInput(args[0])
+                // This specific mp4 codec is missing in Chromium
+                if (mime === 'video/mp4') {
+                    if (codecs.includes('avc1.42E01E')) {
+                        return 'probably'
+                    }
+                }
+                // This mimetype is only supported if no codecs are specified
+                if (mime === 'audio/x-m4a' && !codecs.length) {
+                    return 'maybe'
+                }
+
+                // This mimetype is only supported if no codecs are specified
+                if (mime === 'audio/aac' && !codecs.length) {
+                    return 'probably'
+                }
+                // Everything else as usual
+                return target.apply(ctx, args)
+            }
+        }
+
+        /* global HTMLMediaElement */
+        utils.replaceWithProxy(
+            HTMLMediaElement.prototype,
+            'canPlayType',
+            canPlayType
+        )
+    } catch (e) {}
+
+//navigator.hardwareConcurrency
+    try {
+        const patchNavigator = (name, value) =>
+            utils.replaceProperty(Object.getPrototypeOf(navigator), name, {
+                get() {
+                    return value
+                }
+            })
+
+        patchNavigator('hardwareConcurrency', 4);
+    } catch (e) {}
+
+//navigator.language
+    try {
+        Object.defineProperty(Object.getPrototypeOf(navigator), 'languages', {
+            get: () => ['en-US', 'en']
+        });
+    } catch (e) {}
+
+//navigator.permissions
+    try {
+        const handler = {
+            apply: function(target, ctx, args) {
+                const param = (args || [])[0]
+
+                if (param && param.name && param.name === 'notifications') {
+                    const result = { state: Notification.permission }
+                    Object.setPrototypeOf(result, PermissionStatus.prototype)
+                    return Promise.resolve(result)
+                }
+
+                return utils.cache.Reflect.apply(...arguments)
+            }
+        }
+
+        utils.replaceWithProxy(
+            window.navigator.permissions.__proto__,
+            'query',
+            handler
+        )
+    } catch (e) {}
+
+//navigator.vendor
+    try {
+        Object.defineProperty(Object.getPrototypeOf(navigator), 'vendor', {
+            get: () => 'Google Inc.'
+        })
+    } catch (e) {}
 
 //navigator.webdriver
     try {

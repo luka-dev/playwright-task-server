@@ -1,13 +1,10 @@
-import {
-    FirefoxBrowser
-} from "playwright-core";
-import {firefox} from "playwright-firefox";
+import {chromium, ChromiumBrowser} from "playwright-chromium";
 import Task, {TaskTimes, DONE as TaskDONE, FAIL as TaskFAIL} from "./Task";
 import URL from "url";
 import OS from "os";
 import {Stats} from "./Stats";
 import Context from "./Context";
-import {contextStealth} from "./modules/stealth";
+import contextStealth from "./modules/stealth";
 
 
 export interface InlineLaunchOptions
@@ -22,7 +19,6 @@ export interface InlineLaunchOptions
         username?: string;
         password?: string;
     };
-    firefoxUserPrefs?: object;
     timeout?: number;
     devtools?: boolean;
     slowMo?: number;
@@ -37,7 +33,7 @@ export interface RunOptions {
 
 export default class BrowsersPool {
 
-    private browser: FirefoxBrowser | null = null;
+    private browser: ChromiumBrowser | null = null;
 
     private readonly maxWorkers: number;
     private tasksQueue: Task[] = [];
@@ -95,7 +91,7 @@ export default class BrowsersPool {
 
             try {
                 // @ts-ignore
-                this.browser = await firefox.launch(this.launchOptions);
+                this.browser = await chromium.launch(this.launchOptions);
             } catch (e) {
                 console.log(`Error in running browser: ${e}`);
                 console.log(`Dying`);
