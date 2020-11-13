@@ -4,6 +4,7 @@
   "ENV_OVERWRITE": true,
   "RUN_OPTIONS": {
     "WORKERS_PER_CPU": 12,
+    "MAX_TASK_TIMEOUT": 60000,
     "INLINE": {
       "timeout": 30000,
       "args": [

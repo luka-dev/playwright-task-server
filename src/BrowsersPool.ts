@@ -26,8 +26,7 @@ export interface InlineLaunchOptions
 
 export interface RunOptions {
     WORKERS_PER_CPU: number,
-    // UA: string;
-    // LOCALE: string;
+    MAX_TASK_TIMEOUT: number,
     INLINE: InlineLaunchOptions
 }
 
@@ -38,6 +37,7 @@ export default class BrowsersPool {
     private readonly maxWorkers: number;
     private tasksQueue: Task[] = [];
     private taskManager: NodeJS.Timeout | null = null;
+    private readonly taskTimeout: number;
 
     private defaultBrowserOptions: object = {};
 
@@ -61,6 +61,9 @@ export default class BrowsersPool {
         this.launchOptions = runOptions.INLINE;
 
         this.maxWorkers = runOptions.WORKERS_PER_CPU * OS.cpus().length;
+        if (this.maxWorkers < 1) this.maxWorkers = 1;
+
+        this.taskTimeout = runOptions.MAX_TASK_TIMEOUT;
 
         //Proxy
         if (runOptions.INLINE.proxy === null && process.env.PW_TASK_PROXY !== undefined) {
@@ -122,9 +125,10 @@ export default class BrowsersPool {
 
                             await contextStealth(context);
 
-                            let script = new Function('context', 'modules',
+                            let script = new Function('context', 'modules', 'taskTimeout',
                                 `return new Promise(async (resolve, reject) => {
                                     try {
+                                        setTimeout(() => {reject('Max Task Timeout')}, taskTimeout);
                                         ${task.getScript()}
                                         resolve({});
                                     }
@@ -133,7 +137,7 @@ export default class BrowsersPool {
                                     }
                                 });`
                             );
-                            script(context, this.modules)
+                            script(context, this.modules, this.taskTimeout)
                                 .then(resolve)
                                 .catch(reject);
                         } catch (e) {
@@ -141,7 +145,7 @@ export default class BrowsersPool {
                         }
                     }))
                         .then(async (response: object) => {
-                            await statsContext.closeContext();
+                            statsContext.closeContext();
                             this.stats.addSuccess();
                             this.removeContext(statsContext)
                             task.setDoneTime();
@@ -153,7 +157,7 @@ export default class BrowsersPool {
                             task.getCallback()(TaskDONE, response, task.getTaskTime());
                         })
                         .catch( async (e: any) => {
-                            await statsContext.closeContext();
+                            statsContext.closeContext();
                             this.removeContext(statsContext)
                             task.setDoneTime();
 
@@ -189,7 +193,7 @@ export default class BrowsersPool {
                         });
                 }
             } else if (this.contexts.length >= this.maxWorkers) {
-                console.warn('contextsCounter! Waiting');
+                // console.warn('contextsCounter! Waiting');
             } else if (this.browser !== null && !this.browser.isConnected()) {
                 this.stopTaskManager();
                 this.runBrowser();
