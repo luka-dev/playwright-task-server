@@ -17,7 +17,7 @@ Example of request:
 if in config.json AUTH_KEY is not null, add header
 >Authorization: HERE_AUTH_KEY
 
-in form, field with name 'script' 
+in form, field with name 'script'
 
 Example of request
 ```js
@@ -36,19 +36,25 @@ fetch("http://server_address:port/task", {
 Example of script [(playwright docs)](https://playwright.dev/)
 ```js
 //Creating page inside context
-const page = await modules.pss(context.newPage());
+const page = await context.newPage();
 
-//Preparing key's for data
-data.hosts = [];
-data.res = [];
+//Preparing key's for data storage
+let data = {
+    hosts: [],
+    res: [],
+    ip: null
+};
 
 //Structure, that's listen all requests, and block everything except HTML and log req.
 page.route('**', route => {
+    
+    //Used module.URL (instance of node.js URL)
     data.hosts.push(modules.URL.parse(route.request().url()).hostname);
+    
     if (route.request().resourceType() !== 'document') 
     {
        route.abort('aborted');
-     }
+    }
     else {
       data.res.push(route.request().resourceType());
       route.continue();
@@ -56,17 +62,44 @@ page.route('**', route => {
 });
 
 //Open 2ip main page and waiting for load
-await modules.pss(page.goto('https://2ip.ru/'));
+await page.goto('https://2ip.ru/');
 
 //Extracting ip from html
 data.ip = await (await modules.pss(page.$('div.ip'))).innerText();
+
+//End script execution and tranfer back data
+//also can be reject in case of script failure
+resolve(data);
 ``` 
-Var `data` predifined and evrything that will be saved in her, will be displayed in response. All manually created var's/const's/e.t.c. inside script will be ignored in response.   
+Var `data` locally created and puted throw resolve. Everything from var, will be displayed in response. 
+All manually created var's/const's/e.t.c. inside script will be ignored in response.
 
-`modules.pss` it's my solution to resolve problems with not catched `reject` in Promises.
-This overhead catch `reject`'s and send `throw` that can be cathced by try/catch
+Also task server support `modeules`, custom libs set, that will be available inside runed script context.
 
-Also task server support "modeules" custom lib that will be available inside runed script context.
+### config.json
+
+##### Proxy
+In config, proxy property can be `null` or `object`
+```json
+{
+        "server": "hostname:port",
+        "username": "usernameForProxy",
+        "password": "passwordForProxy"
+}
+```
+In case of unnecessary authorization with username & password, fields `username` and `password` can be skipped or can be `null`
+
+##### Env
+In case, when you need provide additional settings throw environment config - you will have next ENV's
+> PW_TASK_KEY - Key for Authorization
+> 
+> PW_TASK_PORT - Running port
+> 
+> PW_TASK_PROXY - Proxy hostname:port
+> 
+> PW_TASK_USERNAME - Proxy username
+> 
+> PW_TASK_PASSWORD - Proxy password
 
 ### Additional
 [PHP-Lib](https://github.com/luka-dev/playwright-php) for generating simple task script. (lib cover min. req.)

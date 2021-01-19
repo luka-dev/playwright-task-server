@@ -9,7 +9,9 @@
     "lib": [
       "es6",
       "dom",
-      "esnext"
+      "esnext",
+      "es2015.iterable",
+      "es2015.reflect"
     ],
     /* Specify library files to be included in the compilation. */
     "allowJs": true,

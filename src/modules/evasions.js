@@ -454,110 +454,9 @@
         )
     };
 
-
-//UA Entropy values
-    try {
-        navigator.userAgentData.getHighEntropyValues([
-            "platform",
-            "platformVersion",
-            "architecture",
-            "model",
-            "uaFullVersion"
-        ]);
-    } catch (e) {}
-
-// Fake webGL vendor + renderer
-    try {
-        // Remove traces of our Proxy ;-)
-        let stripErrorStack = stack =>
-            stack
-                .split('\n')
-                .filter(line => !line.includes(`at Object.apply`))
-                .filter(line => !line.includes(`at Object.get`))
-                .join('\n')
-
-        const getParameterProxyHandler = {
-            get(target, key) {
-                try {
-                    // Mitigate Chromium bug (#130)
-                    if (typeof target[key] === 'function') {
-                        return target[key].bind(target)
-                    }
-                    return Reflect.get(target, key)
-                } catch (err) {
-                    err.stack = stripErrorStack(err.stack)
-                    throw err
-                }
-            },
-            apply: function (target, thisArg, args) {
-                const param = (args || [])[0]
-                // UNMASKED_VENDOR_WEBGL
-                if (param === 37445) {
-                    return 'Intel Inc.'
-                }
-                // UNMASKED_RENDERER_WEBGL
-                if (param === 37446) {
-                    return 'Intel Iris OpenGL Engine'
-                }
-                try {
-                    return Reflect.apply(target, thisArg, args)
-                } catch (err) {
-                    err.stack = stripErrorStack(err.stack)
-                    throw err
-                }
-            }
-        }
-
-        const proxy = new Proxy(
-            WebGLRenderingContext.prototype.getParameter,
-            getParameterProxyHandler
-        )
-        // To find out the original values here: Object.getOwnPropertyDescriptors(WebGLRenderingContext.prototype.getParameter)
-        Object.defineProperty(WebGLRenderingContext.prototype, 'getParameter', {
-            configurable: true,
-            enumerable: false,
-            writable: false,
-            value: proxy
-        })
-    } catch (e) {}
-
-//overwrite acceptable languages
-    try {
-        Object.defineProperty(navigator, "languages", {
-            get: function () {
-                return ["en-GB", "en"];
-            }
-        });
-    } catch (e) {}
-
-//overwrite the `plugins` property to use a custom getter
-//todo https://github.com/berstend/puppeteer-extra/tree/master/packages/puppeteer-extra-plugin-stealth/evasions/navigator.plugins
-    try {
-        Object.defineProperty(navigator, 'plugins', {
-            get: function () {
-                // this just needs to have `length > 0`, but we could mock the plugins too
-                return [1, 2, 3, 4, 5];
-            },
-        });
-    } catch (e) {}
-
-// Fake hairline feature, see https://github.com/Niek/playwright-addons/issues/2
-    try {
-        const _osH = Object.getOwnPropertyDescriptor(HTMLElement.prototype, 'offsetHeight');
-        Object.defineProperty(HTMLDivElement.prototype, 'offsetHeight', {
-            ..._osH,
-            get: function () {
-                return this.id === 'modernizr' ? 1 : _osH.get.apply(this);
-            }
-        })
-    } catch (e) {}
-
-
-//window.chrome + .app
+//window.chrome
     try {
         if (!window.chrome) {
-            // Use the exact property descriptor found in headful Chrome
-            // fetch it via `Object.getOwnPropertyDescriptor(window, 'chrome')`
             Object.defineProperty(window, 'chrome', {
                 writable: true,
                 enumerable: true,
@@ -565,7 +464,12 @@
                 value: {} // We'll extend that later
             })
         }
+    } catch (e) {
+        console.log(e.toString());
+    }
 
+//window.chrome.app
+    try {
         // That means we're running headful and don't need to mock anything
         if ('app' in window.chrome) {
             return // Nothing to do here
@@ -624,21 +528,12 @@
             }
         }
         utils.patchToStringNested(window.chrome.app);
-    } catch (e) {}
+    } catch (e) {
+        console.log(e.toString());
+    }
 
 //window.chrome.csi
     try {
-        if (!window.chrome) {
-            // Use the exact property descriptor found in headful Chrome
-            // fetch it via `Object.getOwnPropertyDescriptor(window, 'chrome')`
-            Object.defineProperty(window, 'chrome', {
-                writable: true,
-                enumerable: true,
-                configurable: false, // note!
-                value: {} // We'll extend that later
-            })
-        }
-
         // That means we're running headful and don't need to mock anything
         if ('csi' in window.chrome) {
             return // Nothing to do here
@@ -660,21 +555,12 @@
             }
         }
         utils.patchToString(window.chrome.csi);
-    } catch (e) {}
+    } catch (e) {
+        console.log(e.toString());
+    }
 
 //window.chrome.loadTimes
     try {
-        if (!window.chrome) {
-            // Use the exact property descriptor found in headful Chrome
-            // fetch it via `Object.getOwnPropertyDescriptor(window, 'chrome')`
-            Object.defineProperty(window, 'chrome', {
-                writable: true,
-                enumerable: true,
-                configurable: false, // note!
-                value: {} // We'll extend that later
-            })
-        }
-
         // That means we're running headful and don't need to mock anything
         if ('loadTimes' in window.chrome) {
             return // Nothing to do here
@@ -787,9 +673,296 @@
             }
         }
         utils.patchToString(window.chrome.loadTimes);
-    } catch (e) {}
+    } catch (e) {
+        console.log(e.toString());
+    }
 
-//iframe content window
+//window.chrome.runtime
+    try {
+        let STATIC_DATA = {
+            "OnInstalledReason": {
+                "CHROME_UPDATE": "chrome_update",
+                "INSTALL": "install",
+                "SHARED_MODULE_UPDATE": "shared_module_update",
+                "UPDATE": "update"
+            },
+            "OnRestartRequiredReason": {
+                "APP_UPDATE": "app_update",
+                "OS_UPDATE": "os_update",
+                "PERIODIC": "periodic"
+            },
+            "PlatformArch": {
+                "ARM": "arm",
+                "ARM64": "arm64",
+                "MIPS": "mips",
+                "MIPS64": "mips64",
+                "X86_32": "x86-32",
+                "X86_64": "x86-64"
+            },
+            "PlatformNaclArch": {
+                "ARM": "arm",
+                "MIPS": "mips",
+                "MIPS64": "mips64",
+                "X86_32": "x86-32",
+                "X86_64": "x86-64"
+            },
+            "PlatformOs": {
+                "ANDROID": "android",
+                "CROS": "cros",
+                "LINUX": "linux",
+                "MAC": "mac",
+                "OPENBSD": "openbsd",
+                "WIN": "win"
+            },
+            "RequestUpdateCheckStatus": {
+                "NO_UPDATE": "no_update",
+                "THROTTLED": "throttled",
+                "UPDATE_AVAILABLE": "update_available"
+            }
+        };
+
+        // That means we're running headful and don't need to mock anything
+        const existsAlready = 'runtime' in window.chrome
+        // `chrome.runtime` is only exposed on secure origins
+        const isNotSecure = !window.location.protocol.startsWith('https')
+        if (existsAlready || isNotSecure) {
+            return // Nothing to do here
+        }
+
+        window.chrome.runtime = {
+            // There's a bunch of static data in that property which doesn't seem to change,
+            // we should periodically check for updates: `JSON.stringify(window.chrome.runtime, null, 2)`
+            ...STATIC_DATA,
+            // `chrome.runtime.id` is extension related and returns undefined in Chrome
+            get id() {
+                return undefined
+            },
+            // These two require more sophisticated mocks
+            connect: null,
+            sendMessage: null
+        }
+
+        const makeCustomRuntimeErrors = (preamble, method, extensionId) => ({
+            NoMatchingSignature: new TypeError(
+                preamble + `No matching signature.`
+            ),
+            MustSpecifyExtensionID: new TypeError(
+                preamble +
+                `${method} called from a webpage must specify an Extension ID (string) for its first argument.`
+            ),
+            InvalidExtensionID: new TypeError(
+                preamble + `Invalid extension id: '${extensionId}'`
+            )
+        })
+
+        // Valid Extension IDs are 32 characters in length and use the letter `a` to `p`:
+        // https://source.chromium.org/chromium/chromium/src/+/master:components/crx_file/id_util.cc;drc=14a055ccb17e8c8d5d437fe080faba4c6f07beac;l=90
+        const isValidExtensionID = str =>
+            str.length === 32 && str.toLowerCase().match(/^[a-p]+$/)
+
+        /** Mock `chrome.runtime.sendMessage` */
+        const sendMessageHandler = {
+            apply: function (target, ctx, args) {
+                const [extensionId, options, responseCallback] = args || []
+
+                // Define custom errors
+                const errorPreamble = `Error in invocation of runtime.sendMessage(optional string extensionId, any message, optional object options, optional function responseCallback): `
+                const Errors = makeCustomRuntimeErrors(
+                    errorPreamble,
+                    `chrome.runtime.sendMessage()`,
+                    extensionId
+                )
+
+                // Check if the call signature looks ok
+                const noArguments = args.length === 0
+                const tooManyArguments = args.length > 4
+                const incorrectOptions = options && typeof options !== 'object'
+                const incorrectResponseCallback =
+                    responseCallback && typeof responseCallback !== 'function'
+                if (
+                    noArguments ||
+                    tooManyArguments ||
+                    incorrectOptions ||
+                    incorrectResponseCallback
+                ) {
+                    throw Errors.NoMatchingSignature
+                }
+
+                // At least 2 arguments are required before we even validate the extension ID
+                if (args.length < 2) {
+                    throw Errors.MustSpecifyExtensionID
+                }
+
+                // Now let's make sure we got a string as extension ID
+                if (typeof extensionId !== 'string') {
+                    throw Errors.NoMatchingSignature
+                }
+
+                if (!isValidExtensionID(extensionId)) {
+                    throw Errors.InvalidExtensionID
+                }
+
+                return undefined // Normal behavior
+            }
+        }
+        utils.mockWithProxy(
+            window.chrome.runtime,
+            'sendMessage',
+            function sendMessage() {
+            },
+            sendMessageHandler
+        )
+
+        /**
+         * Mock `chrome.runtime.connect`
+         *
+         * @see https://developer.chrome.com/apps/runtime#method-connect
+         */
+        const connectHandler = {
+            apply: function (target, ctx, args) {
+                const [extensionId, connectInfo] = args || []
+
+                // Define custom errors
+                const errorPreamble = `Error in invocation of runtime.connect(optional string extensionId, optional object connectInfo): `
+                const Errors = makeCustomRuntimeErrors(
+                    errorPreamble,
+                    `chrome.runtime.connect()`,
+                    extensionId
+                )
+
+                // Behavior differs a bit from sendMessage:
+                const noArguments = args.length === 0
+                const emptyStringArgument = args.length === 1 && extensionId === ''
+                if (noArguments || emptyStringArgument) {
+                    throw Errors.MustSpecifyExtensionID
+                }
+
+                const tooManyArguments = args.length > 2
+                const incorrectConnectInfoType =
+                    connectInfo && typeof connectInfo !== 'object'
+
+                if (tooManyArguments || incorrectConnectInfoType) {
+                    throw Errors.NoMatchingSignature
+                }
+
+                const extensionIdIsString = typeof extensionId === 'string'
+                if (extensionIdIsString && extensionId === '') {
+                    throw Errors.MustSpecifyExtensionID
+                }
+                if (extensionIdIsString && !isValidExtensionID(extensionId)) {
+                    throw Errors.InvalidExtensionID
+                }
+
+                // There's another edge-case here: extensionId is optional so we might find a connectInfo object as first param, which we need to validate
+                const validateConnectInfo = ci => {
+                    // More than a first param connectInfo as been provided
+                    if (args.length > 1) {
+                        throw Errors.NoMatchingSignature
+                    }
+                    // An empty connectInfo has been provided
+                    if (Object.keys(ci).length === 0) {
+                        throw Errors.MustSpecifyExtensionID
+                    }
+                    // Loop over all connectInfo props an check them
+                    Object.entries(ci).forEach(([k, v]) => {
+                        const isExpected = ['name', 'includeTlsChannelId'].includes(k)
+                        if (!isExpected) {
+                            throw new TypeError(
+                                errorPreamble + `Unexpected property: '${k}'.`
+                            )
+                        }
+                        const MismatchError = (propName, expected, found) =>
+                            TypeError(
+                                errorPreamble +
+                                `Error at property '${propName}': Invalid type: expected ${expected}, found ${found}.`
+                            )
+                        if (k === 'name' && typeof v !== 'string') {
+                            throw MismatchError(k, 'string', typeof v)
+                        }
+                        if (k === 'includeTlsChannelId' && typeof v !== 'boolean') {
+                            throw MismatchError(k, 'boolean', typeof v)
+                        }
+                    })
+                }
+                if (typeof extensionId === 'object') {
+                    validateConnectInfo(extensionId)
+                    throw Errors.MustSpecifyExtensionID
+                }
+
+                // Unfortunately even when the connect fails Chrome will return an object with methods we need to mock as well
+                return utils.patchToStringNested(makeConnectResponse())
+            }
+        }
+        utils.mockWithProxy(
+            window.chrome.runtime,
+            'connect',
+            function connect() {
+            },
+            connectHandler
+        )
+
+        function makeConnectResponse() {
+            const onSomething = () => ({
+                addListener: function addListener() {
+                },
+                dispatch: function dispatch() {
+                },
+                hasListener: function hasListener() {
+                },
+                hasListeners: function hasListeners() {
+                    return false
+                },
+                removeListener: function removeListener() {
+                }
+            })
+
+            const response = {
+                name: '',
+                sender: undefined,
+                disconnect: function disconnect() {
+                },
+                onDisconnect: onSomething(),
+                onMessage: onSomething(),
+                postMessage: function postMessage() {
+                    if (!arguments.length) {
+                        throw new TypeError(`Insufficient number of arguments.`)
+                    }
+                    throw new Error(`Attempting to use a disconnected port object`)
+                }
+            }
+            return response
+        }
+
+    } catch (e) {
+        console.log(e.toString());
+    }
+
+//navigator.language
+    try {
+        Object.defineProperty(Object.getPrototypeOf(navigator), 'language', {
+            get: () => 'en-US'
+        });
+    } catch (e) {
+        console.log(e.toString());
+    }
+
+//navigator.languages
+    try {
+        Object.defineProperty(Object.getPrototypeOf(navigator), 'languages', {
+            get: () => ['en-US', 'en']
+        });
+    } catch (e) {
+        console.log(e.toString());
+    }
+
+//navigator.webdriver
+    try {
+        Object.defineProperty(navigator, 'webdriver', {get: () => false,});
+    } catch (e) {
+        console.log(e.toString());
+    }
+
+//iframe.contentWindow
     try {
         const addContentWindowProxy = iframe => {
             const contentWindowProxy = {
@@ -883,10 +1056,22 @@
 
         // Let's go
         addIframeCreationSniffer();
-    } catch (e) {}
+    } catch (e) {
+        console.log(e.toString());
+    }
 
 //media.codecs
     try {
+        /**
+         * Input might look funky, we need to normalize it so e.g. whitespace isn't an issue for our spoofing.
+         *
+         * @example
+         * video/webm; codecs="vp8, vorbis"
+         * video/mp4; codecs="avc1.42E01E"
+         * audio/x-m4a;
+         * audio/ogg; codecs="vorbis"
+         * @param {String} arg
+         */
         const parseInput = arg => {
             const [mime, codecStr] = arg.trim().split(';')
             let codecs = []
@@ -909,11 +1094,11 @@
 
         const canPlayType = {
             // Intercept certain requests
-            apply: function(target, ctx, args) {
+            apply: function (target, ctx, args) {
                 if (!args || !args.length) {
                     return target.apply(ctx, args)
                 }
-                const { mime, codecs } = parseInput(args[0])
+                const {mime, codecs} = parseInput(args[0])
                 // This specific mp4 codec is missing in Chromium
                 if (mime === 'video/mp4') {
                     if (codecs.includes('avc1.42E01E')) {
@@ -940,35 +1125,32 @@
             'canPlayType',
             canPlayType
         )
-    } catch (e) {}
+    } catch (e) {
+        console.log(e.toString());
+    }
 
 //navigator.hardwareConcurrency
     try {
-        const patchNavigator = (name, value) =>
-            utils.replaceProperty(Object.getPrototypeOf(navigator), name, {
-                get() {
-                    return value
-                }
-            })
-
-        patchNavigator('hardwareConcurrency', 4);
-    } catch (e) {}
-
-//navigator.language
-    try {
-        Object.defineProperty(Object.getPrototypeOf(navigator), 'languages', {
-            get: () => ['en-US', 'en']
-        });
-    } catch (e) {}
+        Object.defineProperty(
+            Object.getPrototypeOf(navigator),
+            'hardwareConcurrency',
+            {
+                value: 4,
+                writable: false
+            }
+        )
+    } catch (e) {
+        console.log(e.toString());
+    }
 
 //navigator.permissions
     try {
         const handler = {
-            apply: function(target, ctx, args) {
+            apply: function (target, ctx, args) {
                 const param = (args || [])[0]
 
                 if (param && param.name && param.name === 'notifications') {
-                    const result = { state: Notification.permission }
+                    const result = {state: Notification.permission}
                     Object.setPrototypeOf(result, PermissionStatus.prototype)
                     return Promise.resolve(result)
                 }
@@ -978,22 +1160,34 @@
         }
 
         utils.replaceWithProxy(
-            window.navigator.permissions.__proto__,
+            Object.getPrototypeOf(navigator.permissions),
             'query',
             handler
         )
-    } catch (e) {}
+    } catch (e) {
+        console.log(e.toString());
+    }
+
 
 //navigator.vendor
     try {
         Object.defineProperty(Object.getPrototypeOf(navigator), 'vendor', {
             get: () => 'Google Inc.'
         })
-    } catch (e) {}
+    } catch (e) {
+        console.log(e.toString());
+    }
 
-//navigator.webdriver
+//window.outerdimensions
     try {
-        delete Object.getPrototypeOf(navigator).webdriver;
-    } catch (e) {}
+        if (window.outerWidth && window.outerHeight) {
+            return // nothing to do here
+        }
+        const windowFrame = 85 // probably OS and WM dependent
+        window.outerWidth = window.innerWidth
+        window.outerHeight = window.innerHeight + windowFrame
+    } catch (e) {
+        console.log(e.toString());
+    }
 
 })();

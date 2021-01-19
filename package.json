@@ -7,6 +7,7 @@
     "clean": "rimraf dist",
     "build": "PLAYWRIGHT_BROWSERS_PATH=0 tsc",
     "start": "PLAYWRIGHT_BROWSERS_PATH=0 node ./dist/src/index.js",
+    "update": "PLAYWRIGHT_BROWSERS_PATH=0 npm update",
     "run": "npm run build && npm run start"
   },
   "repository": {
@@ -20,29 +21,27 @@
   },
   "homepage": "https://github.com/luka-dev/playwright-task-server#readme",
   "devDependencies": {
-    "@types/cors": "^2.8.7",
+    "@types/cors": "^2.8.9",
     "@types/debug": "^4.1.5",
-    "@types/node": "^13.13.15",
+    "@types/express": "^4.17.11",
+    "@types/helmet": "0.0.47",
+    "@types/node": "^13.13.40",
+    "@types/request-promise": "^4.1.47",
     "@typescript-eslint/eslint-plugin": "^2.27.0",
     "@typescript-eslint/parser": "^2.27.0",
     "eslint": "^6.8.0",
-    "nodemon": "^2.0.3",
-    "rimraf": "^3.0.2",
+    "nodemon": "^2.0.7",
     "ts-node": "^8.10.2",
     "typescript": "^3.9.7"
   },
   "dependencies": {
-    "@types/express": "^4.17.7",
-    "@types/helmet": "0.0.47",
-    "@types/request-promise": "^4.1.46",
     "cors": "^2.8.5",
     "express": "^4.17.1",
     "helmet": "^3.23.3",
-    "playwright-chromium": "^1.5.2",
-    "playwright-core": "^1.5.2",
-    "playwright-firefox": "^1.5.2",
+    "playwright-chromium": "^1.7.1",
+    "playwright-core": "^1.7.1",
     "request": "^2.88.2",
     "request-promise": "^4.2.6",
-    "sleep": "^6.3.0"
+    "rimraf": "^3.0.2"
   }
 }
