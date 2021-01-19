@@ -4,11 +4,10 @@ import URL from "url";
 import OS from "os";
 import {Stats} from "./Stats";
 import Context from "./Context";
-import contextStealth from "./modules/stealth";
+import EvasionsInjector from "./modules/stealth/EvasionsInjector";
 
 
-export interface InlineLaunchOptions
-{
+export interface InlineLaunchOptions {
     headless?: boolean;
     executablePath?: string;
     args?: Array<string>;
@@ -123,7 +122,7 @@ export default class BrowsersPool {
                             const context = await this.browser.newContext();
                             statsContext.setBrowserContext(context);
 
-                            await contextStealth(context);
+                            EvasionsInjector(context);
 
                             let script = new Function('context', 'modules', 'taskTimeout',
                                 `return new Promise(async (resolve, reject) => {
