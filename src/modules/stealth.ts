@@ -10,6 +10,16 @@ import {strict} from "assert";
  */
 export default async function (context: BrowserContext) {
 
+
+    //sec-ch-ua
+    context.setExtraHTTPHeaders({
+        'Accept-Language': 'en-US',
+        'Cache-Control': 'max-age=0',
+        'sec-ch-ua': '"Google Chrome"; v="87"',
+        'sec-ch-ua-mobile': '?0',
+    })
+
+
     // Init evasions script on every page load
     let evasionsScript = fs.readFileSync(__dirname + "/" + 'evasions.js').toString();
     await context.addInitScript(evasionsScript);

@@ -66,14 +66,15 @@ export default class BrowsersPool {
         this.taskTimeout = runOptions.MAX_TASK_TIMEOUT;
 
         //Proxy
-        if (runOptions.INLINE.proxy === null && process.env.PW_TASK_PROXY !== undefined) {
+        if (process.env.PW_TASK_PROXY !== undefined) {
             runOptions.INLINE.proxy = {
                 server: process.env.PW_TASK_PROXY,
                 bypass: process.env.PW_TASK_BYPASS ?? "",
                 username: process.env.PW_TASK_USERNAME ?? "",
                 password: process.env.PW_TASK_PASSWORD ?? ""
             };
-        } else {
+        }
+        else if (runOptions.INLINE.proxy === null) {
             runOptions.INLINE.proxy = undefined;
         }
 

@@ -454,6 +454,7 @@
         )
     };
 
+
 //window.chrome
     try {
         if (!window.chrome) {
@@ -464,6 +465,7 @@
                 value: {} // We'll extend that later
             })
         }
+
     } catch (e) {
         console.log(e.toString());
     }
@@ -472,7 +474,7 @@
     try {
         // That means we're running headful and don't need to mock anything
         if ('app' in window.chrome) {
-            return // Nothing to do here
+            throw new Error('app exist')// Nothing to do here
         }
 
         const makeError = {
@@ -528,20 +530,22 @@
             }
         }
         utils.patchToStringNested(window.chrome.app);
+
     } catch (e) {
         console.log(e.toString());
     }
 
 //window.chrome.csi
     try {
+
         // That means we're running headful and don't need to mock anything
         if ('csi' in window.chrome) {
-            return // Nothing to do here
+            throw new Error('Nothing to do here')// Nothing to do here
         }
 
         // Check that the Navigation Timing API v1 is available, we need that
         if (!window.performance || !window.performance.timing) {
-            return
+            throw new Error('Nothing to do here');
         }
 
         const {timing} = window.performance
@@ -563,7 +567,7 @@
     try {
         // That means we're running headful and don't need to mock anything
         if ('loadTimes' in window.chrome) {
-            return // Nothing to do here
+            throw new Error('loadTimes exist')// Nothing to do here
         }
 
         // Check that the Navigation Timing API v1 + v2 is available, we need that
@@ -572,7 +576,7 @@
             !window.performance.timing ||
             !window.PerformancePaintTiming
         ) {
-            return
+            throw new Error('Timing API v1 + v2 isn\'t available');
         }
 
         const {performance} = window
@@ -726,7 +730,7 @@
         // `chrome.runtime` is only exposed on secure origins
         const isNotSecure = !window.location.protocol.startsWith('https')
         if (existsAlready || isNotSecure) {
-            return // Nothing to do here
+            throw new Error('runtime exist')// Nothing to do here
         }
 
         window.chrome.runtime = {
@@ -930,7 +934,7 @@
                     throw new Error(`Attempting to use a disconnected port object`)
                 }
             }
-            return response
+            return response;
         }
 
     } catch (e) {
@@ -957,7 +961,7 @@
 
 //navigator.webdriver
     try {
-        Object.defineProperty(navigator, 'webdriver', {get: () => false,});
+        delete Object.getPrototypeOf(navigator).webdriver
     } catch (e) {
         console.log(e.toString());
     }
@@ -1143,15 +1147,25 @@
         console.log(e.toString());
     }
 
+//Notification
+    try {
+        window.Notification = Object.setPrototypeOf({permission: 'denied'}, EventTarget.prototype);
+        console.log(window.Notification);
+    } catch (e) {
+        console.log(e.toString());
+    }
+
 //navigator.permissions
     try {
         const handler = {
             apply: function (target, ctx, args) {
                 const param = (args || [])[0]
 
+                //Notification.permission === 'denied'
+
+
                 if (param && param.name && param.name === 'notifications') {
-                    const result = {state: Notification.permission}
-                    Object.setPrototypeOf(result, PermissionStatus.prototype)
+                    const result = Object.setPrototypeOf({state: "denied"}, PermissionStatus.prototype)
                     return Promise.resolve(result)
                 }
 
@@ -1163,7 +1177,7 @@
             Object.getPrototypeOf(navigator.permissions),
             'query',
             handler
-        )
+        );
     } catch (e) {
         console.log(e.toString());
     }
@@ -1181,11 +1195,124 @@
 //window.outerdimensions
     try {
         if (window.outerWidth && window.outerHeight) {
-            return // nothing to do here
+            throw new Error('window dimensions nothing to do'); // nothing to do here
         }
         const windowFrame = 85 // probably OS and WM dependent
         window.outerWidth = window.innerWidth
         window.outerHeight = window.innerHeight + windowFrame
+    } catch (e) {
+        console.log(e.toString());
+    }
+
+//navigator.plugins
+    try {
+        const hasPlugins = navigator.plugins && navigator.plugins.length > 0;
+
+        if (!hasPlugins) {
+            const _mimeTypes = [
+                {
+                    type: 'application/pdf', suffixes: 'pdf', description: '', __pluginName: 'Chrome PDF Viewer'
+                },
+                {
+                    type: 'application/x-google-chrome-pdf',
+                    suffixes: 'pdf',
+                    description: 'Portable Document Format',
+                    __pluginName: 'Chrome PDF Plugin'
+                },
+                {
+                    type: 'application/x-nacl',
+                    suffixes: '',
+                    description: 'Native Client Executable',
+                    __pluginName: 'Native Client'
+                },
+                {
+                    type: 'application/x-pnacl',
+                    suffixes: '',
+                    description: 'Portable Native Client Executable',
+                    __pluginName: 'Native Client'
+                }
+            ];
+
+            const _plugins = [
+                {name: 'Chrome PDF Plugin', filename: 'internal-pdf-viewer', description: 'Portable Document Format'},
+                {name: 'Chrome PDF Viewer', filename: 'mhjfbmdgcfjbbpaeojofohoefgiehjai', description: ''},
+                {name: 'Native Client', filename: 'internal-nacl-plugin', description: ''}
+            ];
+
+            const fn = (className, fnName) => function (x) {
+                if (fnName === 'refresh') return undefined;
+                if (!arguments.length) throw new TypeError(`Failed to execute '${fnName}' on '${className}': 1 argument required, but only 0 present.`);
+                return this[x] || null;
+            };
+
+            // Mime Types
+            const mimeTypeArray = _mimeTypes
+                .map(x => ['type', 'suffixes', 'description'].reduce((a, k) => ({...a, [k]: x[k]}), {}))
+                .map(x => Object.setPrototypeOf(x, MimeType.prototype))
+                .map(x => ({...x, namedItem: fn('MimeTypeArray', 'namedItem'), item: fn('MimeTypeArray', 'item')}));
+
+            mimeTypeArray.forEach(x => mimeTypeArray[x.type] = x);
+
+            Object.setPrototypeOf(mimeTypeArray, MimeTypeArray.prototype);
+            Object.defineProperty(Object.getPrototypeOf(navigator), 'mimeTypes', {get: () => mimeTypeArray});
+
+            // Plugins
+            const pluginArray = _plugins
+                .map(x => ['name', 'filename', 'description'].reduce((a, k) => ({...a, [k]: x[k]}), {}))
+                .map(x => {
+                    const _mimeTypesSubset = _mimeTypes.filter(y => y.__pluginName === x.name);
+
+                    _mimeTypesSubset.forEach((mime, i) => {
+                        navigator.mimeTypes[mime.type].enabledPlugin = x;
+                        x[mime.type] = navigator.mimeTypes[mime.type];
+                        x[i] = navigator.mimeTypes[mime.type];
+                    });
+
+                    return {...x, length: _mimeTypesSubset.length};
+                })
+                .map(x => ({...x, namedItem: fn('Plugin', 'namedItem'), item: fn('Plugin', 'item')}))
+                .map(x => Object.setPrototypeOf(x, Plugin.prototype));
+
+
+            pluginArray.forEach(x => pluginArray[x.name] = x);
+
+            ['namedItem', 'item', 'refresh'].forEach(x => pluginArray[x] = fn('PluginArray', x));
+
+            Object.setPrototypeOf(pluginArray, PluginArray.prototype);
+            Object.defineProperty(Object.getPrototypeOf(navigator), 'plugins', {get: () => pluginArray});
+        }
+    } catch (e) {
+        console.log(e.toString());
+    }
+
+//Fake webGL vendor + renderer
+    try {
+
+        const getParameterProxyHandler = {
+            apply: function(target, ctx, args) {
+                const param = (args || [])[0]
+                // UNMASKED_VENDOR_WEBGL
+                if (param === 37445) {
+                    return opts.vendor || 'Intel Inc.' // default in headless: Google Inc.
+                }
+                // UNMASKED_RENDERER_WEBGL
+                if (param === 37446) {
+                    return opts.renderer || 'Intel Iris OpenGL Engine' // default in headless: Google SwiftShader
+                }
+                return utils.cache.Reflect.apply(target, ctx, args)
+            }
+        }
+
+        // There's more than one WebGL rendering context
+        // https://developer.mozilla.org/en-US/docs/Web/API/WebGL2RenderingContext#Browser_compatibility
+        // To find out the original values here: Object.getOwnPropertyDescriptors(WebGLRenderingContext.prototype.getParameter)
+        const addProxy = (obj, propName) => {
+            utils.replaceWithProxy(obj, propName, getParameterProxyHandler)
+        }
+        // For whatever weird reason loops don't play nice with Object.defineProperty, here's the next best thing:
+        addProxy(WebGLRenderingContext.prototype, 'getParameter')
+        addProxy(WebGL2RenderingContext.prototype, 'getParameter')
+
     } catch (e) {
         console.log(e.toString());
     }
