@@ -1289,7 +1289,7 @@
     try {
 
         const getParameterProxyHandler = {
-            apply: function(target, ctx, args) {
+            apply: function (target, ctx, args) {
                 const param = (args || [])[0]
                 // UNMASKED_VENDOR_WEBGL
                 if (param === 37445) {
@@ -1313,6 +1313,13 @@
         addProxy(WebGLRenderingContext.prototype, 'getParameter')
         addProxy(WebGL2RenderingContext.prototype, 'getParameter')
 
+    } catch (e) {
+        console.log(e.toString());
+    }
+
+    //webrtc
+    try {
+        navigator.mediaDevices.getUserMedia = navigator.webkitGetUserMedia = navigator.mozGetUserMedia = navigator.getUserMedia = webkitRTCPeerConnection = RTCPeerConnection = MediaStreamTrack = undefined;
     } catch (e) {
         console.log(e.toString());
     }
