@@ -4,7 +4,7 @@ import URL from "url";
 import OS from "os";
 import {Stats} from "./Stats";
 import Context from "./Context";
-import contextStealth from "./modules/stealth";
+import contextStealth from "./modules/Stealth";
 
 
 export interface InlineLaunchOptions
