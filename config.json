@@ -5,6 +5,7 @@
   "RUN_OPTIONS": {
     "WORKERS_PER_CPU": 12,
     "MAX_TASK_TIMEOUT": 120000,
+    "ACCEPT_LANGUAGE": "en-US,en",
     "INLINE": {
       "timeout": 30000,
       "args": [
@@ -55,11 +56,12 @@
         "--prerender-from-omnibox=disabled",
         "--use-mock-keychain",
         "--silent",
-        "--user-agent=Mozilla/5.0 (Macintosh; Intel Mac OS X 11_0_1) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/87.0.4280.141 Safari/537.36"
+        "--user-agent=Mozilla/5.0 (Macintosh; Intel Mac OS X 11_2_0) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/88.0.4324.150 Safari/537.36"
       ],
       "devtools": false,
       "headless": true,
       "ignoreHTTPSErrors": true,
+      "bypassCSP": true,
       "slowMo": 0,
       "proxy": null
     }

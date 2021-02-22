@@ -2,6 +2,7 @@ import AbstractEvasion from "./AbstractEvasion";
 import {Protocol} from "playwright-chromium/types/protocol";
 import setUserAgentOverrideParameters = Protocol.Emulation.setUserAgentOverrideParameters;
 import UserAgentBrandVersion = Protocol.Emulation.UserAgentBrandVersion;
+import {log} from "util";
 
 export default class UserAgent extends AbstractEvasion {
     private userAgentString: string = '';
@@ -102,12 +103,13 @@ export default class UserAgent extends AbstractEvasion {
         return '';
     }
 
-    public getPlatformArch() {
+    private getPlatformArch() {
         return this.isMobile() ? '' : 'x86';
     }
 
 
     public async use() {
+
         this.userAgentString = await this.page.evaluate('navigator.userAgent');
 
         const override: setUserAgentOverrideParameters = {
@@ -124,6 +126,8 @@ export default class UserAgent extends AbstractEvasion {
                 mobile: this.isMobile()
             }
         };
+
+        console.log('onuse');
 
         await this.cdpSession.send('Network.setUserAgentOverride', override);
     }

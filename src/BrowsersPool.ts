@@ -1,3 +1,5 @@
+// @ts-ignore
+import * as config from '../config.json';
 import {chromium, ChromiumBrowser} from "playwright-chromium";
 import Task, {TaskTimes, DONE as TaskDONE, FAIL as TaskFAIL} from "./Task";
 import URL from "url";
@@ -5,7 +7,6 @@ import OS from "os";
 import {Stats} from "./Stats";
 import Context from "./Context";
 import contextStealth from "./modules/Stealth";
-
 
 export interface InlineLaunchOptions
 {
@@ -121,7 +122,13 @@ export default class BrowsersPool {
                     (new Promise<any>(async (resolve, reject) => {
                         try {
                             // @ts-ignore
-                            const context = await this.browser.newContext();
+                            const context = await this.browser.newContext({
+                                viewport: {
+                                    width: 1920,
+                                    height: 1080
+                                },
+                                locale: config.RUN_OPTIONS.ACCEPT_LANGUAGE
+                            });
                             statsContext.setBrowserContext(context);
 
                             await contextStealth(context);
