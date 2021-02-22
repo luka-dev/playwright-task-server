@@ -28,6 +28,8 @@ export interface InlineLaunchOptions
 export interface RunOptions {
     WORKERS_PER_CPU: number,
     MAX_TASK_TIMEOUT: number,
+    ACCEPT_LANGUAGE: string,
+    USER_AGENT: string,
     INLINE: InlineLaunchOptions
 }
 
@@ -68,17 +70,27 @@ export default class BrowsersPool {
 
         //Proxy
         if (process.env.PW_TASK_PROXY !== undefined) {
-            runOptions.INLINE.proxy = {
+            this.launchOptions.proxy = {
                 server: process.env.PW_TASK_PROXY,
                 bypass: process.env.PW_TASK_BYPASS ?? "",
                 username: process.env.PW_TASK_USERNAME ?? "",
                 password: process.env.PW_TASK_PASSWORD ?? ""
             };
         }
-        else if (runOptions.INLINE.proxy === null) {
-            runOptions.INLINE.proxy = undefined;
+        else if (this.launchOptions.proxy === null) {
+            this.launchOptions.proxy = undefined;
         }
 
+        //UserAgent
+        if (runOptions.USER_AGENT !== null) {
+            if (!Array.isArray(this.launchOptions.args)) {
+                this.launchOptions.args = [];
+            }
+
+            this.launchOptions.args.push(
+                `--user-agent=${runOptions.USER_AGENT}`
+            );
+        }
 
         //Browser name checker
         this.runBrowser();

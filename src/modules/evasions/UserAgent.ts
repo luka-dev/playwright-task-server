@@ -1,11 +1,20 @@
+// @ts-ignore
+import * as config from '../../../config.json';
 import AbstractEvasion from "./AbstractEvasion";
 import {Protocol} from "playwright-chromium/types/protocol";
 import setUserAgentOverrideParameters = Protocol.Emulation.setUserAgentOverrideParameters;
 import UserAgentBrandVersion = Protocol.Emulation.UserAgentBrandVersion;
-import {log} from "util";
+import {ChromiumBrowserContext, Page} from "playwright-chromium";
+import {CDPSession} from "playwright-chromium/types/types";
 
 export default class UserAgent extends AbstractEvasion {
     private userAgentString: string = '';
+
+
+    constructor(page: Page, context: ChromiumBrowserContext, cdpSession: CDPSession) {
+        super(page, context, cdpSession);
+        this.userAgentString = config.RUN_OPTIONS.USER_AGENT;
+    }
 
     private getUAVersion(): string {
         let data = this.userAgentString.includes('Chrome/')
@@ -109,11 +118,8 @@ export default class UserAgent extends AbstractEvasion {
 
 
     public async use() {
-
-        this.userAgentString = await this.page.evaluate('navigator.userAgent');
-
         const override: setUserAgentOverrideParameters = {
-            acceptLanguage: 'en-US,en',
+            acceptLanguage: config.RUN_OPTIONS.ACCEPT_LANGUAGE,
             userAgent: this.userAgentString,
             platform: this.getPlatform(),
             userAgentMetadata: {
@@ -126,8 +132,6 @@ export default class UserAgent extends AbstractEvasion {
                 mobile: this.isMobile()
             }
         };
-
-        console.log('onuse');
 
         await this.cdpSession.send('Network.setUserAgentOverride', override);
     }
