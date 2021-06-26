@@ -55,7 +55,7 @@ export default class BrowsersPool {
         URL: URL,
     };
 
-    public constructor(stats: Stats, runOptions: RunOptions, envOverwrite: boolean = false) {
+    public constructor(stats: Stats, runOptions: RunOptions) {
 
         //Stats init
         stats.setContexts(this.contexts);

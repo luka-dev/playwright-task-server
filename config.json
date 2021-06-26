@@ -6,7 +6,7 @@
     "WORKERS_PER_CPU": 12,
     "MAX_TASK_TIMEOUT": 120000,
     "ACCEPT_LANGUAGE": "en-US,en",
-    "USER_AGENT": "Mozilla/5.0 (Macintosh; Intel Mac OS X 11_2_3) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/89.0.4389.90 Safari/537.36",
+    "USER_AGENT": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.114 Safari/537.3",
     "INLINE": {
       "timeout": 30000,
       "args": [

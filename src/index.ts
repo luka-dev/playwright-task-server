@@ -8,7 +8,7 @@ import {TaskTimes} from "./Task";
 
 const stats = new Stats();
 
-const browsersPool = new BrowsersPool(stats, <RunOptions>config.RUN_OPTIONS, config.ENV_OVERWRITE);
+const browsersPool = new BrowsersPool(stats, <RunOptions>config.RUN_OPTIONS);
 
 (async () => {
     await browsersPool.runBrowser();

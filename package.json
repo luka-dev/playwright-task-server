@@ -5,10 +5,8 @@
   "main": "build/index.js",
   "scripts": {
     "clean": "rimraf dist",
-    "build": "PLAYWRIGHT_BROWSERS_PATH=0 tsc",
-    "start": "PLAYWRIGHT_BROWSERS_PATH=0 node ./dist/src/index.js",
-    "update": "PLAYWRIGHT_BROWSERS_PATH=0 npm update",
-    "run": "npm run build && npm run start"
+    "build": "tsc",
+    "start": "node ./dist/src/index.js"
   },
   "repository": {
     "type": "git",
@@ -21,25 +19,25 @@
   },
   "homepage": "https://github.com/luka-dev/playwright-task-server#readme",
   "devDependencies": {
-    "@types/cors": "^2.8.9",
+    "@types/cors": "^2.8.10",
     "@types/debug": "^4.1.5",
-    "@types/express": "^4.17.11",
-    "@types/helmet": "0.0.47",
-    "@types/node": "^13.13.40",
+    "@types/express": "^4.17.12",
+    "@types/helmet": "0.0.48",
+    "@types/node": "^15.12.4",
     "@types/request-promise": "^4.1.47",
-    "@typescript-eslint/eslint-plugin": "^2.27.0",
-    "@typescript-eslint/parser": "^2.27.0",
-    "eslint": "^6.8.0",
+    "@typescript-eslint/eslint-plugin": "^4.28.0",
+    "@typescript-eslint/parser": "^4.28.0",
+    "eslint": "^7.29.0",
     "nodemon": "^2.0.7",
-    "ts-node": "^8.10.2",
-    "typescript": "^3.9.7"
+    "ts-node": "^10.0.0",
+    "typescript": "^4.3.4"
   },
   "dependencies": {
     "cors": "^2.8.5",
     "express": "^4.17.1",
-    "helmet": "^3.23.3",
-    "playwright-chromium": "^1.8.0",
-    "playwright-core": "^1.8.0",
+    "helmet": "^4.6.0",
+    "playwright-chromium": "^1.12.2",
+    "playwright-core": "^1.12.2",
     "request": "^2.88.2",
     "request-promise": "^4.2.6",
     "rimraf": "^3.0.2"
