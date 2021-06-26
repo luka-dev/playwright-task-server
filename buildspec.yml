@@ -6,13 +6,13 @@ phases:
   pre_build:
     commands:
       - echo Dep install started on `date`
-      - PLAYWRIGHT_BROWSERS_PATH=0 npm install -g typescript
-      - PLAYWRIGHT_BROWSERS_PATH=0 npm install
+      - npm install -g typescript
+      - npm install
       - npm audit fix
   build:
     commands:
       - echo Build started on `date`
-      - PLAYWRIGHT_BROWSERS_PATH=0 npm run build
+      - npm run build
 artifacts:
   files:
     - .platform/**/*
