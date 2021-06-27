@@ -1,5 +1,4 @@
-// @ts-ignore
-import * as config from '../config.json';
+import * as config from './config.json';
 import {chromium, ChromiumBrowser} from "playwright-chromium";
 import Task, {TaskTimes, DONE as TaskDONE, FAIL as TaskFAIL} from "./Task";
 import URL from "url";
