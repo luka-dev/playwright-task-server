@@ -10,7 +10,6 @@ import {CDPSession} from "playwright-chromium/types/types";
 export default class UserAgent extends AbstractEvasion {
     private userAgentString: string = '';
 
-
     constructor(page: Page, context: ChromiumBrowserContext, cdpSession: CDPSession) {
         super(page, context, cdpSession);
         this.userAgentString = config.RUN_OPTIONS.USER_AGENT;

@@ -12,5 +12,5 @@ export default abstract class AbstractEvasion {
         this.cdpSession = cdpSession;
     }
 
-    public abstract async use(): Promise<void>;
+    public abstract use(): Promise<void>;
 }
