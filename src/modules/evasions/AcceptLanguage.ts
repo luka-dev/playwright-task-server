@@ -1,5 +1,4 @@
 import AbstractEvasion from "./AbstractEvasion";
-// @ts-ignore
 import * as config from '../../config.json';
 
 export default class AcceptLanguage extends AbstractEvasion {
