@@ -28,7 +28,15 @@ fetch("http://server_address:port/task", {
     "authorization": "HERE_AUTH_KEY"
   },
   "body": {
-    "script": "HERE_IS_SCRIPT"
+      "options": {
+          "proxy": {
+              "server": "PROTOCOL://ADDRESS:PORT", 
+              "bypass": "", 
+              "username": "USERNAME", 
+              "password": "PASSWORD"
+          }
+      }, 
+      "script": "HERE_IS_SCRIPT"
   }
 });
 ```
@@ -65,7 +73,7 @@ page.route('**', route => {
 await page.goto('https://2ip.ru/');
 
 //Extracting ip from html
-data.ip = await (await modules.pss(page.$('div.ip'))).innerText();
+data.ip = (await page.$('div.ip')).innerText();
 
 //End script execution and tranfer back data
 //also can be reject in case of script failure
@@ -77,20 +85,26 @@ All manually created var's/const's/e.t.c. inside script will be ignored in respo
 Also task server support `modeules`, custom libs set, that will be available inside runed script context.
 
 ### config.json
-
 ##### Proxy
-In config, proxy property can be `null` or `object`
+In config, proxy property can be `null`, `object` or `per-context` (default: `per-context`), follow this [docs](https://playwright.dev/docs/api/class-browsertype#browser-type-launch-option-proxy).
+Example of proxy object
 ```json
 {
         "server": "hostname:port",
+        "bypass": "",
         "username": "usernameForProxy",
         "password": "passwordForProxy"
 }
 ```
+
+Proxy per-context configuration [docs](https://playwright.dev/docs/api/class-browser#browser-new-context-option-proxy)
+
+To set GLOBAL proxy, use ENV
+
 In case of unnecessary authorization with username & password, fields `username` and `password` can be skipped or can be `null`
 
 ##### Env
-In case, when you need provide additional settings throw environment config - you will have next ENV's
+
 > PW_TASK_KEY - Key for Authorization
 > 
 > PW_TASK_PORT - Running port
@@ -105,7 +119,4 @@ In case, when you need provide additional settings throw environment config - yo
 [PHP-Lib](https://github.com/luka-dev/playwright-php) for generating simple task script. (lib cover min. req.)
 
 ### todo
-- [x] add flexible support for proxy in config
-in config like ProxyOptions interface or process.env.PW_TASK_SERVER, BYPASS, USERNAME, PASSWORD
-
-- [ ] add google recaptcha solver
+- Submit issues with ideas
