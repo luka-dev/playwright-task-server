@@ -1,6 +1,7 @@
 // @ts-ignore
 import * as config from '../config.json';
 import {chromium, ChromiumBrowser} from "playwright-chromium";
+import {BrowserContextOptions, LaunchOptions} from "playwright-chromium/types/types";
 import Task, {TaskTimes, DONE as TaskDONE, FAIL as TaskFAIL} from "./Task";
 import URL from "url";
 import OS from "os";
@@ -8,29 +9,29 @@ import {Stats} from "./Stats";
 import Context from "./Context";
 import contextStealth from "./modules/Stealth";
 
-export interface InlineLaunchOptions
-{
-    headless?: boolean;
-    executablePath?: string;
-    args?: Array<string>;
-    ignoreDefaultArgs?: boolean|Array<string>;
-    proxy:null|undefined|{
-        server: string;
-        bypass?: string;
-        username?: string;
-        password?: string;
-    };
-    timeout?: number;
-    devtools?: boolean;
-    slowMo?: number;
-}
+// export interface InlineLaunchOptions
+// {
+//     headless?: boolean;
+//     executablePath?: string;
+//     args?: Array<string>;
+//     ignoreDefaultArgs?: boolean|Array<string>;
+//     proxy:null|undefined|{
+//         server: string;
+//         bypass?: string;
+//         username?: string;
+//         password?: string;
+//     };
+//     timeout?: number;
+//     devtools?: boolean;
+//     slowMo?: number;
+// }
 
 export interface RunOptions {
     WORKERS_PER_CPU: number,
     MAX_TASK_TIMEOUT: number,
-    ACCEPT_LANGUAGE: string,
+    ACCEPT_LANGUAGE?: string,
     USER_AGENT: string,
-    INLINE: InlineLaunchOptions
+    LAUNCH_OPTIONS: LaunchOptions
 }
 
 export default class BrowsersPool {
@@ -42,12 +43,12 @@ export default class BrowsersPool {
     private taskManager: NodeJS.Timeout | null = null;
     private readonly taskTimeout: number;
 
-    private defaultBrowserOptions: object = {};
+    private defaultContextOptions: object = {};
 
     private contexts: Context[] = [];
 
     private stats: Stats;
-    private readonly launchOptions: InlineLaunchOptions;
+    private readonly launchOptions: LaunchOptions;
 
     private browserRunnerFlag: boolean = false;
 
@@ -55,31 +56,18 @@ export default class BrowsersPool {
         URL: URL,
     };
 
-    public constructor(stats: Stats, runOptions: RunOptions, envOverwrite: boolean = false) {
+    public constructor(stats: Stats, runOptions: RunOptions) {
 
         //Stats init
         stats.setContexts(this.contexts);
         this.stats = stats;
 
-        this.launchOptions = runOptions.INLINE;
+        this.launchOptions = <LaunchOptions>runOptions.LAUNCH_OPTIONS;
 
         this.maxWorkers = runOptions.WORKERS_PER_CPU * OS.cpus().length;
         if (this.maxWorkers < 1) this.maxWorkers = 1;
 
         this.taskTimeout = runOptions.MAX_TASK_TIMEOUT;
-
-        //Proxy
-        if (process.env.PW_TASK_PROXY !== undefined) {
-            this.launchOptions.proxy = {
-                server: process.env.PW_TASK_PROXY,
-                bypass: process.env.PW_TASK_BYPASS ?? "",
-                username: process.env.PW_TASK_USERNAME ?? "",
-                password: process.env.PW_TASK_PASSWORD ?? ""
-            };
-        }
-        else if (this.launchOptions.proxy === null) {
-            this.launchOptions.proxy = undefined;
-        }
 
         //UserAgent
         if (runOptions.USER_AGENT !== null) {
@@ -87,9 +75,7 @@ export default class BrowsersPool {
                 this.launchOptions.args = [];
             }
 
-            this.launchOptions.args.push(
-                `--user-agent=${runOptions.USER_AGENT}`
-            );
+            this.launchOptions.args.push(`--user-agent=${runOptions.USER_AGENT}`);
         }
 
         //Browser name checker
@@ -101,13 +87,11 @@ export default class BrowsersPool {
         if (statsContextIndex >= 0) this.contexts.splice(statsContextIndex);
     }
 
-
     public async runBrowser() {
         if (!this.browserRunnerFlag) {
             this.browserRunnerFlag = true;
 
             try {
-                // @ts-ignore
                 this.browser = await chromium.launch(this.launchOptions);
             } catch (e) {
                 console.log(`Error in running browser: ${e}`);
@@ -123,7 +107,7 @@ export default class BrowsersPool {
 
         this.taskManager = setInterval(() => {
             if (this.browser !== null && this.browser.isConnected() && this.contexts.length < this.maxWorkers) {
-                //@ts-ignore fix for ${task.getScript()}
+                // @ts-ignore fix for task.getScript()
                 let task: Task = this.tasksQueue.shift();
                 if (task !== undefined) {
                     task.setRunTime();
@@ -133,19 +117,15 @@ export default class BrowsersPool {
 
                     (new Promise<any>(async (resolve, reject) => {
                         try {
-                            // @ts-ignore
-                            const context = await this.browser.newContext({
-                                viewport: {
-                                    width: 1920,
-                                    height: 1080
-                                },
-                                locale: config.RUN_OPTIONS.ACCEPT_LANGUAGE
-                            });
+                            const contextOption = task.getContextOptions();
+
+                            // @ts-ignore can't be null
+                            const context = await this.browser.newContext(contextOption);
                             statsContext.setBrowserContext(context);
 
                             await contextStealth(context);
 
-                            let script = new Function('context', 'modules', 'taskTimeout',
+                            const script = new Function('context', 'modules', 'taskTimeout',
                                 `return new Promise(async (resolve, reject) => {
                                     try {
                                         setTimeout(() => {reject('Max Task Timeout')}, taskTimeout);
@@ -231,18 +211,26 @@ export default class BrowsersPool {
         }
     }
 
-    public setDefaultBrowserOptions(options: object) {
-        this.defaultBrowserOptions = options;
-    }
-
-    public getDefaultBrowserOptions() {
-        return this.defaultBrowserOptions;
-    }
-
-    public addTask(script: string, callback: (scriptStatus: string, scriptReturn: object, times: TaskTimes) => void, options: object | null = null) {
-        if (options === null) {
-            options = this.getDefaultBrowserOptions();
+    public addTask(script: string, callback: (scriptStatus: string, scriptReturn: object, times: TaskTimes) => void, options: BrowserContextOptions = {}) {
+        if (typeof options.viewport !== 'object') {
+            options.viewport = {width: 1920, height: 1080}
         }
+
+        if (typeof options.locale !== 'string') {
+            options.locale = config.RUN_OPTIONS.ACCEPT_LANGUAGE;
+        }
+
+        if (typeof options.proxy !== 'object') {
+            if (process.env.PW_TASK_PROXY !== undefined) {
+                options.proxy = {
+                    server: process.env.PW_TASK_PROXY,
+                    bypass: process.env.PW_TASK_BYPASS ?? "",
+                    username: process.env.PW_TASK_USERNAME ?? "",
+                    password: process.env.PW_TASK_PASSWORD ?? ""
+                };
+            }
+        }
+
         this.stats.addTask();
         this.tasksQueue.push(new Task(script, callback, options));
     }
