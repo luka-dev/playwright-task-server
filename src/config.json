@@ -6,8 +6,8 @@
     "WORKERS_PER_CPU": 12,
     "MAX_TASK_TIMEOUT": 120000,
     "ACCEPT_LANGUAGE": "en-US,en",
-    "USER_AGENT": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.114 Safari/537.3",
-    "INLINE": {
+    "USER_AGENT": "Mozilla/5.0 (Macintosh; Intel Mac OS X 11_2_3) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/89.0.4389.90 Safari/537.36",
+    "LAUNCH_OPTIONS": {
       "timeout": 30000,
       "args": [
         "--disable-blink-features=AutomationControlled",
@@ -63,7 +63,9 @@
       "ignoreHTTPSErrors": true,
       "bypassCSP": true,
       "slowMo": 0,
-      "proxy": null
+      "proxy": {
+        "server": "per-context"
+      }
     }
   }
 }

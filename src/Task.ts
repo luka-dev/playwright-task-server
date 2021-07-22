@@ -1,3 +1,5 @@
+import {BrowserContextOptions, LaunchOptions} from "playwright-chromium/types/types";
+
 export const DONE = 'DONE';
 export const FAIL = 'FAIL';
 
@@ -10,7 +12,7 @@ export interface TaskTimes {
 export default class Task {
 
     private readonly script: string;
-    private readonly options: object
+    private readonly options: BrowserContextOptions
 
     private readonly createTime: number;
     private runTime: number | null = null;
@@ -18,7 +20,7 @@ export default class Task {
 
     private readonly callback: (scriptStatus: string, scriptReturn: object, times: TaskTimes) => void;
 
-    public constructor(script: string, callback: (scriptStatus: string, scriptReturn: object, times: TaskTimes) => void, browserContextOptions: object) {
+    public constructor(script: string, callback: (scriptStatus: string, scriptReturn: object, times: TaskTimes) => void, browserContextOptions: BrowserContextOptions = {}) {
         this.script = script;
         this.callback = callback;
         this.options = browserContextOptions;
@@ -29,7 +31,7 @@ export default class Task {
         return this.script;
     }
 
-    public getBrowserContextOptions(): object {
+    public getContextOptions(): BrowserContextOptions {
         return this.options;
     }
 
