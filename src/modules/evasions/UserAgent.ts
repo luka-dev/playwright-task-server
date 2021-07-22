@@ -1,4 +1,4 @@
-import * as config from '../../config.json';
+import * as config from '../../../config.json';
 import AbstractEvasion from "./AbstractEvasion";
 import {Protocol} from "playwright-chromium/types/protocol";
 import setUserAgentOverrideParameters = Protocol.Emulation.setUserAgentOverrideParameters;

@@ -4,11 +4,10 @@
   "ENV_OVERWRITE": true,
   "RUN_OPTIONS": {
     "WORKERS_PER_CPU": 12,
-    "MAX_TASK_TIMEOUT": 120000,
+    "MAX_TASK_TIMEOUT": 30000,
     "ACCEPT_LANGUAGE": "en-US,en",
     "USER_AGENT": "Mozilla/5.0 (Macintosh; Intel Mac OS X 11_2_3) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/89.0.4389.90 Safari/537.36",
     "LAUNCH_OPTIONS": {
-      "timeout": 30000,
       "args": [
         "--disable-blink-features=AutomationControlled",
         "--enable-features=NetworkService",

@@ -1,4 +1,4 @@
-import * as config from "./config.json";
+import * as config from "../config.json";
 import {WebServer} from "./WebServer";
 import BrowsersPool, {RunOptions} from "./BrowsersPool";
 import OS from "os";
@@ -7,7 +7,6 @@ import {TaskTimes} from "./Task";
 import {BrowserContextOptions} from "playwright-chromium/types/types";
 
 const stats = new Stats();
-
 const browsersPool = new BrowsersPool(stats, <RunOptions>config.RUN_OPTIONS);
 
 (async () => {

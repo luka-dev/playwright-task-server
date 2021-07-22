@@ -1,5 +1,5 @@
 import AbstractEvasion from "./AbstractEvasion";
-import * as config from '../../config.json';
+import * as config from '../../../config.json';
 
 export default class AcceptLanguage extends AbstractEvasion {
     private static contextFlagged: boolean = false;

@@ -1,4 +1,5 @@
-import * as config from './config.json';
+// @ts-ignore not under root dir
+import * as config from '../config.json';
 import {chromium, ChromiumBrowser} from "playwright-chromium";
 import {BrowserContextOptions, LaunchOptions} from "playwright-chromium/types/types";
 import Task, {TaskTimes, DONE as TaskDONE, FAIL as TaskFAIL} from "./Task";
@@ -7,23 +8,7 @@ import OS from "os";
 import {Stats} from "./Stats";
 import Context from "./Context";
 import contextStealth from "./modules/Stealth";
-
-// export interface InlineLaunchOptions
-// {
-//     headless?: boolean;
-//     executablePath?: string;
-//     args?: Array<string>;
-//     ignoreDefaultArgs?: boolean|Array<string>;
-//     proxy:null|undefined|{
-//         server: string;
-//         bypass?: string;
-//         username?: string;
-//         password?: string;
-//     };
-//     timeout?: number;
-//     devtools?: boolean;
-//     slowMo?: number;
-// }
+import ProxyServer from "./ProxyServer";
 
 export interface RunOptions {
     WORKERS_PER_CPU: number,
@@ -36,13 +21,12 @@ export interface RunOptions {
 export default class BrowsersPool {
 
     private browser: ChromiumBrowser | null = null;
+    private localProxyServer: ProxyServer|null = null;
 
     private readonly maxWorkers: number;
     private tasksQueue: Task[] = [];
     private taskManager: NodeJS.Timeout | null = null;
     private readonly taskTimeout: number;
-
-    private defaultContextOptions: object = {};
 
     private contexts: Context[] = [];
 
@@ -62,6 +46,7 @@ export default class BrowsersPool {
         this.stats = stats;
 
         this.launchOptions = <LaunchOptions>runOptions.LAUNCH_OPTIONS;
+        this.launchOptions.timeout = runOptions.MAX_TASK_TIMEOUT;
 
         this.maxWorkers = runOptions.WORKERS_PER_CPU * OS.cpus().length;
         if (this.maxWorkers < 1) this.maxWorkers = 1;
@@ -75,6 +60,15 @@ export default class BrowsersPool {
             }
 
             this.launchOptions.args.push(`--user-agent=${runOptions.USER_AGENT}`);
+        }
+
+        //Proxy
+        if (this.launchOptions.proxy?.server === 'per-context' && typeof process.env.PW_TASK_PROXY !== 'string') {
+            this.localProxyServer = new ProxyServer();
+
+            process.env.PW_TASK_PROXY = `socks5://${this.localProxyServer.getAddress()}:${this.localProxyServer.getPort()}`;
+            process.env.PW_TASK_USERNAME = '';
+            process.env.PW_TASK_PASSWORD = '';
         }
 
         //Browser name checker
@@ -226,6 +220,14 @@ export default class BrowsersPool {
                     bypass: process.env.PW_TASK_BYPASS ?? "",
                     username: process.env.PW_TASK_USERNAME ?? "",
                     password: process.env.PW_TASK_PASSWORD ?? ""
+                };
+            }
+            else {
+                options.proxy = {
+                    server: `socks5://localhost:${process.env.LOCAL_PRXOY_PORT}`,
+                    bypass: "",
+                    username: "",
+                    password: ""
                 };
             }
         }
