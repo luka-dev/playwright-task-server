@@ -24,6 +24,7 @@
     "@types/express": "^4.17.12",
     "@types/helmet": "0.0.48",
     "@types/node": "^15.12.4",
+    "@types/random-useragent": "^0.3.0",
     "@types/request-promise": "^4.1.47",
     "@typescript-eslint/eslint-plugin": "^4.28.0",
     "@typescript-eslint/parser": "^4.28.0",
@@ -36,11 +37,12 @@
     "cors": "^2.8.5",
     "express": "^4.17.1",
     "helmet": "^4.6.0",
-    "playwright-chromium": "^1.13.0",
     "playwright-core": "^1.13.0",
+    "playwright-chromium": "^1.13.0",
     "request": "^2.88.2",
     "request-promise": "^4.2.6",
     "rimraf": "^3.0.2",
-    "simple-socks": "^2.2.1"
+    "simple-socks": "^2.2.1",
+    "user-agents": "^1.0.745"
   }
 }

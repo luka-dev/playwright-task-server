@@ -7,14 +7,15 @@ import URL from "url";
 import OS from "os";
 import {Stats} from "./Stats";
 import Context from "./Context";
-import contextStealth from "./modules/Stealth";
 import ProxyServer from "./ProxyServer";
+import ChromeRandomUserAgent from "./modules/ChromeRandomUserAgent";
+import Stealth from "./modules/Stealth";
 
 export interface RunOptions {
     WORKERS_PER_CPU: number,
     MAX_TASK_TIMEOUT: number,
     ACCEPT_LANGUAGE?: string,
-    USER_AGENT: string,
+    USER_AGENT?: string,
     LAUNCH_OPTIONS: LaunchOptions
 }
 
@@ -53,13 +54,25 @@ export default class BrowsersPool {
 
         this.taskTimeout = runOptions.MAX_TASK_TIMEOUT;
 
-        //UserAgent
-        if (runOptions.USER_AGENT !== null) {
-            if (!Array.isArray(this.launchOptions.args)) {
-                this.launchOptions.args = [];
-            }
+        if (!Array.isArray(this.launchOptions.args)) {
+            this.launchOptions.args = [];
+        }
 
+        //UserAgent
+        if (runOptions.USER_AGENT !== undefined) {
             this.launchOptions.args.push(`--user-agent=${runOptions.USER_AGENT}`);
+        }
+        else {
+            const randomUA = new ChromeRandomUserAgent();
+            this.launchOptions.args.push(`--user-agent=${randomUA.getUserAgent()}`)
+        }
+
+        //Lang
+        if (runOptions.ACCEPT_LANGUAGE !== undefined) {
+            this.launchOptions.args.push(`--lang=${runOptions.USER_AGENT}`);
+        }
+        else {
+            this.launchOptions.args.push(`--lang=en-US,en`);
         }
 
         //Proxy
@@ -114,9 +127,16 @@ export default class BrowsersPool {
 
                             // @ts-ignore can't be null
                             const context = await this.browser.newContext(contextOption);
-                            statsContext.setBrowserContext(context);
+                            await Stealth(context);
 
-                            await contextStealth(context);
+                            context.on('page', async page => {
+                                page.on('console', async msg => {
+                                    for (let i = 0; i < msg.args().length; ++i)
+                                        console.log(`${i}: ${await msg.args()[i].jsonValue()}`);
+                                })
+                            })
+
+                            statsContext.setBrowserContext(context);
 
                             const script = new Function('context', 'modules', 'taskTimeout',
                                 `return new Promise(async (resolve, reject) => {
@@ -230,6 +250,11 @@ export default class BrowsersPool {
                     password: ""
                 };
             }
+        }
+
+        if (typeof options.userAgent !== 'string') {
+            const randomUA = new ChromeRandomUserAgent();
+            options.userAgent = randomUA.getUserAgent();
         }
 
         this.stats.addTask();

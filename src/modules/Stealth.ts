@@ -1,7 +1,13 @@
 import {ChromiumBrowserContext, Page} from "playwright-chromium";
-import UserAgent from "./evasions/UserAgent";
-import AcceptLanguage from "./evasions/AcceptLanguage";
-import {PageStealth} from "./evasions/PageStealth";
+import ChromeApp from "./evasions/ChromeApp";
+import ChromeCsi from "./evasions/ChromeCsi";
+import ChromeLoadTimes from "./evasions/ChromeLoadTimes";
+import NavigatorWebdriver from "./evasions/NavigatorWebdriver";
+import NavigatorUserAgentData from "./evasions/NavigatorUserAgentData";
+import NavigatorVendor from "./evasions/NavigatorVendor";
+import ConnectionRtt from "./evasions/ConnectionRtt";
+import NavigatorPluginsAndMimeTypes from "./evasions/NavigatorPluginsAndMimeTypes";
+import NavigatorPermissions from "./evasions/NavigatorPermissions";
 
 /**
  * Enable the stealth add-on
@@ -9,18 +15,13 @@ import {PageStealth} from "./evasions/PageStealth";
  */
 export default async function (context: ChromiumBrowserContext) {
     // Init evasions script on every page load
-
-    context.on('page', async (page: Page) => {
-        try {
-            const cdpSession = await context.newCDPSession(page);
-
-            await (new UserAgent(page, context, cdpSession)).use();
-            await (new AcceptLanguage(page, context, cdpSession)).use();
-            await PageStealth(page);
-
-            page.on('console', msg => console.log('PageLog:', msg.text()));
-        } catch (e) {
-            console.log(e.toString());
-        }
-    });
+    await ChromeApp(context);
+    await ChromeCsi(context);
+    await ChromeLoadTimes(context);
+    await ConnectionRtt(context);
+    await NavigatorPluginsAndMimeTypes(context);
+    await NavigatorPermissions(context);
+    await NavigatorUserAgentData(context);
+    await NavigatorVendor(context);
+    await NavigatorWebdriver(context);
 }

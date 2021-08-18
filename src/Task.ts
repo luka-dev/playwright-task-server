@@ -12,7 +12,7 @@ export interface TaskTimes {
 export default class Task {
 
     private readonly script: string;
-    private readonly options: BrowserContextOptions
+    private options: BrowserContextOptions
 
     private readonly createTime: number;
     private runTime: number | null = null;
@@ -33,6 +33,10 @@ export default class Task {
 
     public getContextOptions(): BrowserContextOptions {
         return this.options;
+    }
+
+    public setContextOptions(options: BrowserContextOptions) {
+        this.options = options;
     }
 
     public getCallback() {
