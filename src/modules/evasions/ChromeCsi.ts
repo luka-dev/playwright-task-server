@@ -1,4 +1,4 @@
-import {CDPSession, ChromiumBrowserContext, Page} from "playwright-core";
+import {ChromiumBrowserContext} from "playwright-chromium";
 
 export default async function (context: ChromiumBrowserContext): Promise<void> {
     await context.addInitScript(function () {
@@ -40,8 +40,7 @@ export default async function (context: ChromiumBrowserContext): Promise<void> {
                     }
                 },
             set:
-                function (a) {
-                }
+                function (a) {}
         })
     });
 }

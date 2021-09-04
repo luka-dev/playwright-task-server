@@ -1,5 +1,4 @@
-import {BrowserContext} from "playwright-core";
-import {Dialog} from "playwright-chromium";
+import {Dialog, BrowserContext} from "playwright-chromium";
 
 export default class Context {
 

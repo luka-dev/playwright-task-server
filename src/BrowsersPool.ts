@@ -1,6 +1,6 @@
 // @ts-ignore not under root dir
 import * as config from '../config.json';
-import {chromium, ChromiumBrowser} from "playwright-chromium";
+import {chromium, ChromiumBrowser, errors} from "playwright-chromium";
 import {BrowserContextOptions, LaunchOptions} from "playwright-chromium/types/types";
 import Task, {TaskTimes, DONE as TaskDONE, FAIL as TaskFAIL} from "./Task";
 import URL from "url";
@@ -10,6 +10,7 @@ import Context from "./Context";
 import ProxyServer from "./ProxyServer";
 import ChromeRandomUserAgent from "./modules/ChromeRandomUserAgent";
 import Stealth from "./modules/Stealth";
+import TimeoutError = errors.TimeoutError;
 
 export interface RunOptions {
     WORKERS_PER_CPU: number,
@@ -76,12 +77,8 @@ export default class BrowsersPool {
         }
 
         //Proxy
-        if (this.launchOptions.proxy?.server === 'per-context' && typeof process.env.PW_TASK_PROXY !== 'string') {
+        if (this.launchOptions.proxy?.server === 'per-context' && process.env.PW_TASK_PROXY === undefined) {
             this.localProxyServer = new ProxyServer();
-
-            process.env.PW_TASK_PROXY = `socks5://${this.localProxyServer.getAddress()}:${this.localProxyServer.getPort()}`;
-            process.env.PW_TASK_USERNAME = '';
-            process.env.PW_TASK_PASSWORD = '';
         }
 
         //Browser name checker
@@ -140,14 +137,9 @@ export default class BrowsersPool {
 
                             const script = new Function('context', 'modules', 'taskTimeout',
                                 `return new Promise(async (resolve, reject) => {
-                                    try {
                                         setTimeout(() => {reject('Max Task Timeout')}, taskTimeout);
                                         ${task.getScript()}
                                         resolve({});
-                                    }
-                                    catch (e) {
-                                        reject(e);
-                                    }
                                 });`
                             );
                             script(context, this.modules, this.taskTimeout)
@@ -174,39 +166,27 @@ export default class BrowsersPool {
                             this.removeContext(statsContext)
                             task.setDoneTime();
 
-                            if (e instanceof Error) {
-                                if (e.message.indexOf('Target.createBrowserContext') >= 0) {
-                                    //no runed browser, rerunning doing task
-                                    await this.runBrowser();
-                                    this.tasksQueue.push(task);
-                                } else {
-                                    let errorMsg = 'Fail in script calling (runTask)';
-
-                                    if (e.name === 'TimeoutError') {
-                                        errorMsg = 'TimeOut in script';
-                                        this.stats.addTimeout();
-                                    } else {
-                                        this.stats.addFail();
-                                    }
-
-                                    task.getCallback()(TaskFAIL, {
-                                        'error': errorMsg,
-                                        'log': e.toString(),
-                                        'stack': e.stack
-                                    }, task.getTaskTime());
-                                }
-                            }
-                            else {
+                            if (e instanceof TimeoutError) {
                                 task.getCallback()(TaskFAIL, {
-                                    'error': 'Fail in script calling (runTask)',
+                                    'error': 'TimeoutError inside script',
+                                    'log': e.toString(),
+                                    'stack': e.stack
+                                }, task.getTaskTime());
+                            } else if (e instanceof Error) {
+                                task.getCallback()(TaskFAIL, {
+                                    'error': `Error inside script | ${e.message}`,
+                                    'log': e.toString(),
+                                    'stack': e.stack
+                                }, task.getTaskTime());
+                            } else {
+                                task.getCallback()(TaskFAIL, {
+                                    'error': `Unprocessable error, see logs`,
                                     'log': JSON.stringify(e),
-                                    'stack': 'Not an instance of Error',
+                                    'stack': 'No stack'
                                 }, task.getTaskTime());
                             }
                         });
                 }
-            } else if (this.contexts.length >= this.maxWorkers) {
-                // console.warn('contextsCounter! Waiting');
             } else if (this.browser !== null && !this.browser.isConnected()) {
                 this.stopTaskManager();
                 this.runBrowser();
@@ -234,22 +214,12 @@ export default class BrowsersPool {
         }
 
         if (typeof options.proxy !== 'object') {
-            if (process.env.PW_TASK_PROXY !== undefined) {
-                options.proxy = {
-                    server: process.env.PW_TASK_PROXY,
-                    bypass: process.env.PW_TASK_BYPASS ?? "",
-                    username: process.env.PW_TASK_USERNAME ?? "",
-                    password: process.env.PW_TASK_PASSWORD ?? ""
-                };
-            }
-            else {
-                options.proxy = {
-                    server: `socks5://localhost:${process.env.LOCAL_PRXOY_PORT}`,
-                    bypass: "",
-                    username: "",
-                    password: ""
-                };
-            }
+            options.proxy = {
+                server: process.env.PW_TASK_PROXY ?? `socks5://127.0.0.1:${process.env.LOCAL_PRXOY_PORT}`,
+                bypass: process.env.PW_TASK_BYPASS ?? "",
+                username: process.env.PW_TASK_USERNAME ?? "",
+                password: process.env.PW_TASK_PASSWORD ?? ""
+            };
         }
 
         if (typeof options.userAgent !== 'string') {

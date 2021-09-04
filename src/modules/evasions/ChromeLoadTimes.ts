@@ -1,4 +1,4 @@
-import {CDPSession, ChromiumBrowserContext, Page} from "playwright-core";
+import {ChromiumBrowserContext} from "playwright-chromium";
 
 export default async function (context: ChromiumBrowserContext): Promise<void> {
     await context.addInitScript(function () {
@@ -117,7 +117,7 @@ export default async function (context: ChromiumBrowserContext): Promise<void> {
             }
         }
 
-        // @ts-ignore
+        // @ts-ignorew
         window.chrome.loadTimes = function () {
             return {
                 ...protocolInfo,
