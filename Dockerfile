@@ -1,4 +1,4 @@
-FROM 453262333533.dkr.ecr.eu-central-1.amazonaws.com/from_playwrite_chrom:latest
+FROM 453262333533.dkr.ecr.eu-central-1.amazonaws.com/from_playwright_chrom:latest
 COPY ./ /var/app/
 RUN npm i
 RUN npm audit fix
