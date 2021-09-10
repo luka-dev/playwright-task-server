@@ -5,6 +5,14 @@ import OS from "os";
 import {Stats} from "./Stats";
 import {TaskTimes} from "./Task";
 import {BrowserContextOptions} from "playwright-chromium/types/types";
+import * as fs from "fs";
+
+let buildVersion: number|null = null;
+try {
+    buildVersion = parseInt(fs.readFileSync('buildversion', 'utf8').trim()) ?? null;
+} catch (e) {
+    buildVersion = null;
+}
 
 const stats = new Stats();
 const browsersPool = new BrowsersPool(stats, <RunOptions>config.RUN_OPTIONS);
@@ -26,6 +34,8 @@ webServer.get('/', (request, response) => {
 
 webServer.get('/stats', (request, response) => {
     response.json({
+
+        build_version: buildVersion,
 
         requests: {
             total: stats.getTotalTasks(),
