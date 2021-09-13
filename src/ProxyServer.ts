@@ -6,21 +6,15 @@ export default class ProxyServer {
 
 
     constructor() {
-        if (typeof process.env.LOCAL_PRXOY_PORT !== 'string') {
-            process.env.LOCAL_PRXOY_PORT = '8888';
-        }
-
         this.server = createServer();
-        this.server.listen(parseInt(process.env.LOCAL_PRXOY_PORT));
+        this.server.listen(ProxyServer.getPort());
     }
 
-    public getAddress(): string
-    {
-        return 'localhost';
+    public static getHost(): string {
+        return '127.0.0.1';
     }
 
-    public getPort(): number
-    {
+    public static getPort(): number {
         return parseInt(process.env.LOCAL_PRXOY_PORT ?? '8888');
     }
 }
