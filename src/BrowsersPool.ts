@@ -138,8 +138,12 @@ export default class BrowsersPool {
                             const script = new Function('context', 'modules', 'taskTimeout',
                                 `return new Promise(async (resolve, reject) => {
                                         setTimeout(() => {reject('Max Task Timeout')}, taskTimeout);
-                                        ${task.getScript()}
-                                        resolve({});
+                                        try {
+                                            ${task.getScript()}
+                                            resolve({});
+                                        } catch (e) {
+                                            reject(e);
+                                        }
                                 });`
                             );
                             script(context, this.modules, this.taskTimeout)
@@ -215,7 +219,7 @@ export default class BrowsersPool {
 
         if (typeof options.proxy !== 'object') {
             options.proxy = {
-                server: process.env.PW_TASK_PROXY ?? `socks5://127.0.0.1:${process.env.LOCAL_PRXOY_PORT}`,
+                server: process.env.PW_TASK_PROXY ?? `socks5://${ProxyServer.getHost()}:${ProxyServer.getPort()}`,
                 bypass: process.env.PW_TASK_BYPASS ?? "",
                 username: process.env.PW_TASK_USERNAME ?? "",
                 password: process.env.PW_TASK_PASSWORD ?? ""
