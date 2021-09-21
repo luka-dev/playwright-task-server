@@ -74,8 +74,9 @@ export class WebServer {
         this.app.post(route, (request, response) => {
             if (!this.checkAuth(request)) {
                 response.send(401);
+            } else {
+                callback(request, response);
             }
-            callback(request, response);
         })
     }
 
@@ -83,8 +84,9 @@ export class WebServer {
         this.app.get(route, (request, response) => {
             if (route !== '/' && !this.checkAuth(request)) {
                 response.send(401);
+            } else {
+                callback(request, response);
             }
-            callback(request, response);
         })
     }
 
