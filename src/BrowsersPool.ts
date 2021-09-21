@@ -6,10 +6,11 @@ import Task, {TaskTimes, DONE as TaskDONE, FAIL as TaskFAIL} from "./Task";
 import URL from "url";
 import OS from "os";
 import {Stats} from "./Stats";
-import Context from "./Context";
+import StatsContext from "./StatsContext";
 import ProxyServer from "./ProxyServer";
-import ChromeRandomUserAgent from "./modules/ChromeRandomUserAgent";
-import Stealth from "./modules/Stealth";
+import ChromeRandomUserAgent from "./helpers/ChromeRandomUserAgent";
+import StealthPrepareOptions from "./modules/StealthPrepareOptions";
+import StealthWrapContext from "./modules/StealthWrapContext";
 import TimeoutError = errors.TimeoutError;
 
 export interface RunOptions {
@@ -23,14 +24,14 @@ export interface RunOptions {
 export default class BrowsersPool {
 
     private browser: ChromiumBrowser | null = null;
-    private localProxyServer: ProxyServer|null = null;
+    private localProxyServer: ProxyServer | null = null;
 
     private readonly maxWorkers: number;
     private tasksQueue: Task[] = [];
     private taskManager: NodeJS.Timeout | null = null;
     private readonly taskTimeout: number;
 
-    private contexts: Context[] = [];
+    private contexts: StatsContext[] = [];
 
     private stats: Stats;
     private readonly launchOptions: LaunchOptions;
@@ -62,8 +63,7 @@ export default class BrowsersPool {
         //UserAgent
         if (runOptions.USER_AGENT !== undefined) {
             this.launchOptions.args.push(`--user-agent=${runOptions.USER_AGENT}`);
-        }
-        else {
+        } else {
             const randomUA = new ChromeRandomUserAgent();
             this.launchOptions.args.push(`--user-agent=${randomUA.getUserAgent()}`)
         }
@@ -71,8 +71,7 @@ export default class BrowsersPool {
         //Lang
         if (runOptions.ACCEPT_LANGUAGE !== undefined) {
             this.launchOptions.args.push(`--lang=${runOptions.USER_AGENT}`);
-        }
-        else {
+        } else {
             this.launchOptions.args.push(`--lang=en-US,en`);
         }
 
@@ -83,9 +82,21 @@ export default class BrowsersPool {
 
         //Browser name checker
         this.runBrowser();
+
+        process.on('unhandledRejection', (e) => {
+            this.tasksQueue.forEach(task => this.fatalError(task));
+        });
     }
 
-    public removeContext(context: Context) {
+    private fatalError(task: Task): void {
+        task.getCallback()(TaskFAIL, {
+            'error': `Unprocessable error, couped script`,
+            'log': JSON.stringify('FATAL'),
+            'stack': 'No stack'
+        }, task.getTaskTime());
+    }
+
+    public removeContext(context: StatsContext) {
         let statsContextIndex = this.contexts.indexOf(context);
         if (statsContextIndex >= 0) this.contexts.splice(statsContextIndex);
     }
@@ -105,38 +116,30 @@ export default class BrowsersPool {
         }
     }
 
+    private async newStatsContext(task: Task): Promise<StatsContext> {
+        task.setRunTime();
+        const statsContext = new StatsContext();
+        const contextOption = task.getContextOptions();
+        StealthPrepareOptions(contextOption);
+        // @ts-ignore can't be null
+        const context = await this.browser.newContext(contextOption);
+        await StealthWrapContext(context, contextOption);
+        statsContext.setBrowserContext(context);
+
+        return statsContext;
+    }
+
     public async runTaskManager() {
         console.log('Running Task Manager');
 
-        this.taskManager = setInterval(() => {
+        this.taskManager = setInterval(async () => {
             if (this.browser !== null && this.browser.isConnected() && this.contexts.length < this.maxWorkers) {
-                // @ts-ignore fix for task.getScript()
-                let task: Task = this.tasksQueue.shift();
+                const task: Task | undefined = this.tasksQueue.shift();
                 if (task !== undefined) {
-                    task.setRunTime();
+                    const statsContext = await this.newStatsContext(task);
 
-                    let statsContext = new Context();
-                    this.contexts.push(statsContext);
-
-                    (new Promise<any>(async (resolve, reject) => {
-                        try {
-                            const contextOption = task.getContextOptions();
-
-                            // @ts-ignore can't be null
-                            const context = await this.browser.newContext(contextOption);
-                            await Stealth(context);
-
-                            context.on('page', async page => {
-                                page.on('console', async msg => {
-                                    for (let i = 0; i < msg.args().length; ++i)
-                                        console.log(`${i}: ${await msg.args()[i].jsonValue()}`);
-                                })
-                            })
-
-                            statsContext.setBrowserContext(context);
-
-                            const script = new Function('context', 'modules', 'taskTimeout',
-                                `return new Promise(async (resolve, reject) => {
+                    const evalScript = new Function('context', 'modules', 'taskTimeout',
+                        `return new Promise(async (resolve, reject) => {
                                         setTimeout(() => {reject('Max Task Timeout')}, taskTimeout);
                                         try {
                                             ${task.getScript()}
@@ -144,28 +147,22 @@ export default class BrowsersPool {
                                         } catch (e) {
                                             reject(e);
                                         }
-                                });`
-                            );
-                            script(context, this.modules, this.taskTimeout)
-                                .then(resolve)
-                                .catch(reject);
-                        } catch (e) {
-                            reject(e);
+                                });`)
+                    (statsContext.getBrowserContext(), this.modules, this.taskTimeout);
+
+                    evalScript.then(async (response: object) => {
+                        statsContext.closeContext();
+                        this.stats.addSuccess();
+                        this.removeContext(statsContext)
+                        task.setDoneTime();
+
+                        if (typeof response !== 'object') {
+                            response = {response};
                         }
-                    }))
-                        .then(async (response: object) => {
-                            statsContext.closeContext();
-                            this.stats.addSuccess();
-                            this.removeContext(statsContext)
-                            task.setDoneTime();
 
-                            if (typeof response !== 'object') {
-                                response = {response};
-                            }
-
-                            task.getCallback()(TaskDONE, response, task.getTaskTime());
-                        })
-                        .catch( async (e: any) => {
+                        task.getCallback()(TaskDONE, response, task.getTaskTime());
+                    })
+                        .catch(async (e: any) => {
                             statsContext.closeContext();
                             this.removeContext(statsContext)
                             task.setDoneTime();

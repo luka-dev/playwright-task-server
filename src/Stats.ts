@@ -1,4 +1,4 @@
-import Context from "./Context";
+import StatsContext from "./StatsContext";
 
 export class Stats {
     private totalTasks: number = 0;
@@ -9,7 +9,7 @@ export class Stats {
     private taskPendingTotal: number = 0;
     private taskProcessingTotal: number = 0;
 
-    private contexts: Context[] = [];
+    private contexts: StatsContext[] = [];
 
 
     private readonly runnedAt: number;
@@ -69,7 +69,7 @@ export class Stats {
         return this.taskProcessingTotal / (this.totalTasksSuccessful + this.totalTasksFailed + this.totalTasksTimeout);
     }
 
-    public setContexts(contexts: Context[]): void {
+    public setContexts(contexts: StatsContext[]): void {
         this.contexts = contexts;
     }
 

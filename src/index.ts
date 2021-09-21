@@ -7,7 +7,7 @@ import {TaskTimes} from "./Task";
 import {BrowserContextOptions} from "playwright-chromium/types/types";
 import * as fs from "fs";
 
-let buildVersion: number|null = null;
+let buildVersion: number | null = null;
 try {
     buildVersion = parseInt(fs.readFileSync('buildversion', 'utf8').trim()) ?? null;
 } catch (e) {
@@ -16,11 +16,6 @@ try {
 
 const stats = new Stats();
 const browsersPool = new BrowsersPool(stats, <RunOptions>config.RUN_OPTIONS);
-
-(async () => {
-    await browsersPool.runBrowser();
-    await browsersPool.runTaskManager();
-})();
 
 const webServer = new WebServer(config.SERVER_PORT, config.ENV_OVERWRITE);
 
@@ -98,4 +93,8 @@ webServer.post(`/task`, (request, response) => {
     }
 });
 
-webServer.start();
+(async () => {
+    await browsersPool.runBrowser();
+    await browsersPool.runTaskManager();
+    await webServer.start();
+})();

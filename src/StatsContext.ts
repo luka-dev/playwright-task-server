@@ -1,12 +1,12 @@
-import {Dialog, BrowserContext} from "playwright-chromium";
+import {Dialog, ChromiumBrowserContext} from "playwright-chromium";
 
-export default class Context {
+export default class StatsContext {
 
     public readonly initTime: number;
-    private browserContext: BrowserContext | null = null;
+    private browserContext: ChromiumBrowserContext | null = null;
     private dialogs: Dialog[] = [];
 
-    public constructor(initTime: number | null = null, browserContext: BrowserContext | null = null) {
+    public constructor(initTime: number | null = null, browserContext: ChromiumBrowserContext | null = null) {
         if (initTime === null) {
             initTime = (new Date()).getTime();
         }
@@ -15,7 +15,7 @@ export default class Context {
         this.browserContext = browserContext;
     }
 
-    public setBrowserContext(browserContext: BrowserContext): void {
+    public setBrowserContext(browserContext: ChromiumBrowserContext): void {
         this.browserContext = browserContext;
 
         //workaround for known bug https://github.com/microsoft/playwright/issues/4179
@@ -24,6 +24,11 @@ export default class Context {
                 this.dialogs.push(dialog);
             });
         })
+    }
+
+    public getBrowserContext(): ChromiumBrowserContext | null
+    {
+        return this.browserContext;
     }
 
     public async closeContext() {
