@@ -9,12 +9,13 @@ import {Stats} from "./Stats";
 import StatsContext from "./StatsContext";
 import ProxyServer from "./ProxyServer";
 import ChromeRandomUserAgent from "./helpers/ChromeRandomUserAgent";
-import StealthPrepareOptions from "./modules/StealthPrepareOptions";
-import StealthWrapContext from "./modules/StealthWrapContext";
+import StealthPrepareOptions from "./helpers/StealthPrepareOptions";
+import StealthWrapContext from "./helpers/StealthWrapContext";
 import TimeoutError = errors.TimeoutError;
 import tmp from "tmp";
 import * as fs from "fs";
 import {execSync} from "child_process";
+import BlockRequest from "./modules/BlockRequest";
 
 export interface RunOptions {
     WORKERS_PER_CPU: number,
@@ -43,6 +44,7 @@ export default class BrowsersPool {
 
     private modules = {
         URL: URL,
+        'blockRequest': BlockRequest
     };
 
     private static fatalError(task: Task): void {
@@ -167,7 +169,7 @@ export default class BrowsersPool {
                                             resolve({});
                                         } catch (e) {
                                             reject(e);
-                                        }
+                     2                   }
                                 });`)
         )(context, this.modules, this.taskTimeout);
     }

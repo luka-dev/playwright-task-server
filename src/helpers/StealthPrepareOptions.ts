@@ -1,7 +1,7 @@
 import {BrowserContextOptions} from "playwright-chromium/types/types";
 import SetTimeZone from "./evasions/SetTimeZone";
 import SetGeoLocations from "./evasions/SetGeoLocations";
-import {ProxyLookUp} from "../helpers/ProxyLookUp";
+import {ProxyLookUp} from "./ProxyLookUp";
 
 
 /**
