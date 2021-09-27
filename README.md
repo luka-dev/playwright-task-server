@@ -20,6 +20,9 @@ if in config.json AUTH_KEY is not null, add header
 in form, field with name 'script'
 
 Example of request
+>!!!**WARNING**!!!
+> 
+> Field **script** should be a string.
 ```js
 fetch("http://server_address:port/task", {
   "method": "POST",
@@ -48,12 +51,12 @@ const page = await context.newPage();
 
 //Preparing key's for data storage
 let data = {
-    hosts: [],
-    res: [],
-    ip: null
-};
+        hosts: [],
+        res: [],
+        ip: null
+    };
 
-//Structure, that's listen all requests, and block everything except HTML and log req.
+//Listener, that's catch all requests, block everything except HTML and loging them.
 page.route('**', route => {
     
     //Used module.URL (instance of node.js URL)
@@ -75,7 +78,7 @@ await page.goto('https://2ip.ru/');
 //Extracting ip from html
 data.ip = (await page.$('div.ip')).innerText();
 
-//End script execution and tranfer back data
+//End script execution and return data
 //also can be reject in case of script failure
 resolve(data);
 ``` 
@@ -119,4 +122,5 @@ In case of unnecessary authorization with username & password, fields `username`
 [PHP-Lib](https://github.com/luka-dev/playwright-php) for generating simple task script. (lib cover min. req.)
 
 ### todo
+- [ ] Cover node inside docker container with **xvfb**
 - Submit issues with ideas
