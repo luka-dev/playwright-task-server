@@ -11,6 +11,7 @@ import ConnectionRtt from "./evasions/ConnectionRtt";
 import NavigatorPluginsAndMimeTypes from "./evasions/NavigatorPluginsAndMimeTypes";
 import NavigatorPermissions from "./evasions/NavigatorPermissions";
 import ExtraHeaders from "./evasions/ExtraHeaders";
+import WebGl from "./evasions/WebGl";
 
 /**
  * Enable the stealth add-on
@@ -30,4 +31,5 @@ export default async function (context: ChromiumBrowserContext, contextOptions: 
     await NavigatorUserAgentData(context, contextOptions.userAgent);
     await NavigatorVendor(context);
     await NavigatorWebdriver(context);
+    await WebGl(context);
 }

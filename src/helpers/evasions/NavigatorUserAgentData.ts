@@ -10,7 +10,7 @@ export default async function (context: ChromiumBrowserContext, userAgent?: stri
     const version = regexpDigits.length > 1 ? regexpDigits[1] : "99";
     const isMobile = /.*(Android|iOS|Mobile).*/.exec(userAgent) === null;
 
-    await context.addInitScript(function () {
+    await context.addInitScript(function (arg: {version: string, isMobile: boolean}) {
 
         Object.defineProperty(navigator,
             'userAgentData',
@@ -18,15 +18,15 @@ export default async function (context: ChromiumBrowserContext, userAgent?: stri
                 get: function () {
                     return {
                         brands: [
-                            {brand: "Google Chrome", version: version},
+                            {brand: "Google Chrome", version: arg.version},
                             {brand: " Not;A Brand", version: "99"},
-                            {brand: "Chromium", version: version},
+                            {brand: "Chromium", version: arg.version},
                         ],
-                        isMobile: isMobile
+                        isMobile: arg.isMobile
                     }
                 },
                 set: function () {
                 }
             });
-    });
+    }, {version, isMobile});
 }
