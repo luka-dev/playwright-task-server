@@ -203,18 +203,21 @@ export default class BrowsersPool {
                                 task.setDoneTime();
 
                                 if (e instanceof TimeoutError) {
+                                    this.stats.addTimeout();
                                     task.getCallback()(TaskFAIL, {
                                         'error': 'TimeoutError inside script',
                                         'log': e.toString(),
                                         'stack': e.stack
                                     }, task.getTaskTime());
                                 } else if (e instanceof Error) {
+                                    this.stats.addFail();
                                     task.getCallback()(TaskFAIL, {
                                         'error': `Error inside script | ${e.message}`,
                                         'log': e.toString(),
                                         'stack': e.stack
                                     }, task.getTaskTime());
                                 } else {
+                                    this.stats.addFail();
                                     task.getCallback()(TaskFAIL, {
                                         'error': `Unprocessable error, see logs`,
                                         'log': JSON.stringify(e),
