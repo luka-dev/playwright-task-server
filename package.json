@@ -6,7 +6,7 @@
   "scripts": {
     "clean": "rimraf dist",
     "build": "tsc",
-    "start": "node ./dist/index.js"
+    "start": "DEBUG=pw:api,pw:page_log node ./dist/index.js"
   },
   "repository": {
     "type": "git",

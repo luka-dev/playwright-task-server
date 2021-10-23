@@ -25,6 +25,7 @@
         "--disable-hang-monitor",
         "--disable-infobars",
         "--window-position=0,0",
+        "--window-size=1920,1080",
         "--disable-notifications",
         "--disable-offer-store-unmasked-wallet-cards",
         "--disable-offer-upload-credit-cards",
