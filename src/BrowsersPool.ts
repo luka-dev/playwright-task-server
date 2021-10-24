@@ -16,6 +16,7 @@ import tmp from "tmp";
 import * as fs from "fs";
 import {execSync} from "child_process";
 import BlockRequest from "./modules/BlockRequest";
+import {debug as isDebug} from "debug";
 
 export interface RunOptions {
     WORKERS_PER_CPU: number,
@@ -204,33 +205,50 @@ export default class BrowsersPool {
 
                                 if (e instanceof TimeoutError) {
                                     this.stats.addTimeout();
-                                    task.getCallback()(TaskFAIL, {
+                                    const error = {
                                         'error': 'TimeoutError inside script',
                                         'log': e.toString(),
                                         'stack': e.stack
-                                    }, task.getTaskTime());
+                                    };
+                                    if (isDebug("pw:error_response")) {
+                                        console.error(error);
+                                    }
+                                    task.getCallback()(TaskFAIL, error, task.getTaskTime());
                                 } else if (e instanceof Error) {
                                     this.stats.addFail();
-                                    task.getCallback()(TaskFAIL, {
+                                    const error = {
                                         'error': `Error inside script | ${e.message}`,
                                         'log': e.toString(),
                                         'stack': e.stack
-                                    }, task.getTaskTime());
+                                    };
+                                    if (isDebug("pw:error_response")) {
+                                        console.error(error);
+                                    }
+                                    task.getCallback()(TaskFAIL, error, task.getTaskTime());
                                 } else {
                                     this.stats.addFail();
-                                    task.getCallback()(TaskFAIL, {
+                                    const error = {
                                         'error': `Unprocessable error, see logs`,
                                         'log': JSON.stringify(e),
                                         'stack': 'No stack'
-                                    }, task.getTaskTime());
+                                    };
+                                    if (isDebug("pw:error_response")) {
+                                        console.error(error);
+                                    }
+                                    task.getCallback()(TaskFAIL, error, task.getTaskTime());
                                 }
                             });
                     } else {
-                        task.getCallback()(TaskFAIL, {
+                        this.stats.addFail();
+                        const error = {
                             'error': `Script Error | Check Syntax`,
                             'log': 'No log',
                             'stack': 'No stack'
-                        }, task.getTaskTime());
+                        };
+                        if (isDebug("pw:error_response")) {
+                            console.error(error);
+                        }
+                        task.getCallback()(TaskFAIL, error, task.getTaskTime());
                     }
                 }
             } else if (this.browser !== null && !this.browser.isConnected()) {
