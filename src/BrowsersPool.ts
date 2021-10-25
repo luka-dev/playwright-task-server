@@ -195,7 +195,9 @@ export default class BrowsersPool {
                                 if (typeof response !== 'object') {
                                     response = {response};
                                 }
-
+                                if (isDebug("pw:response")) {
+                                    console.log('Task Done');
+                                }
                                 task.getCallback()(TaskDONE, response, task.getTaskTime());
                             })
                             .catch(async (e: any) => {
@@ -210,8 +212,8 @@ export default class BrowsersPool {
                                         'log': e.toString(),
                                         'stack': e.stack
                                     };
-                                    if (isDebug("pw:error_response")) {
-                                        console.error(error);
+                                    if (isDebug("pw:response")) {
+                                        console.log(error);
                                     }
                                     task.getCallback()(TaskFAIL, error, task.getTaskTime());
                                 } else if (e instanceof Error) {
@@ -221,8 +223,8 @@ export default class BrowsersPool {
                                         'log': e.toString(),
                                         'stack': e.stack
                                     };
-                                    if (isDebug("pw:error_response")) {
-                                        console.error(error);
+                                    if (isDebug("pw:response")) {
+                                        console.log(error);
                                     }
                                     task.getCallback()(TaskFAIL, error, task.getTaskTime());
                                 } else {
@@ -232,8 +234,8 @@ export default class BrowsersPool {
                                         'log': JSON.stringify(e),
                                         'stack': 'No stack'
                                     };
-                                    if (isDebug("pw:error_response")) {
-                                        console.error(error);
+                                    if (isDebug("pw:response")) {
+                                        console.log(error);
                                     }
                                     task.getCallback()(TaskFAIL, error, task.getTaskTime());
                                 }
@@ -245,8 +247,8 @@ export default class BrowsersPool {
                             'log': 'No log',
                             'stack': 'No stack'
                         };
-                        if (isDebug("pw:error_response")) {
-                            console.error(error);
+                        if (isDebug("pw:response")) {
+                            console.log(error);
                         }
                         task.getCallback()(TaskFAIL, error, task.getTaskTime());
                     }
