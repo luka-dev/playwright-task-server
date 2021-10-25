@@ -3,7 +3,7 @@
   "SERVER_PORT": 80,
   "ENV_OVERWRITE": true,
   "RUN_OPTIONS": {
-    "WORKERS_PER_CPU": 12,
+    "WORKERS_PER_CPU": 2,
     "MAX_TASK_TIMEOUT": 45000,
     "ACCEPT_LANGUAGE": "en-US,en",
     "LAUNCH_OPTIONS": {
