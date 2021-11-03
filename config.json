@@ -4,7 +4,7 @@
   "ENV_OVERWRITE": true,
   "RUN_OPTIONS": {
     "WORKERS_PER_CPU": 2,
-    "MAX_TASK_TIMEOUT": 90000,
+    "MAX_TASK_TIMEOUT": 45000,
     "ACCEPT_LANGUAGE": "en-US,en",
     "LAUNCH_OPTIONS": {
       "args": [
