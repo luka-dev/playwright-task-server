@@ -17,6 +17,7 @@ artifacts:
   files:
     - .platform/**/*
     - dist/**/*
+    - config.json
     - node_modules/**/*
     - package.json
     - package-lock.json
