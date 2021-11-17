@@ -9,6 +9,7 @@ phases:
       - npm install -g typescript
       - npm install
       - npm audit fix
+      - npx playwright install chromium
   build:
     commands:
       - echo Build started on `date`
