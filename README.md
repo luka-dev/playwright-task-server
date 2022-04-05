@@ -1,3 +1,12 @@
+# !!!REPO DEPRACTICATED!!!
+## Look into [secret-agent-task-server](https://github.com/luka-dev/secret-agent-task-server), php helper lib soon.
+### Why? Main reasons is...
+### - SecretAgent provide more stable, patched version of Chrome (not Chromium)
+### - SecretAgent contains builded-in a lot of techics to make headless browser udetectabe for bot detectors.
+>
+#
+
+
 # PLAYWRIGHT task server
 It's a Node.Js server that's hold playwright to process tasks (mainly - crawling)
 
