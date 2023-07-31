@@ -1,8 +1,8 @@
 # !!!REPO DEPRACTICATED!!!
-## Look into [secret-agent-task-server](https://github.com/luka-dev/secret-agent-task-server), php helper lib soon.
+## Look into backend [headless-task-server](https://github.com/luka-dev/headless-task-server) and php helper [headless-task-server-php](https://github.com/luka-dev/headless-task-server-php).
 ### Why? Main reasons is...
-### - SecretAgent provide more stable, patched version of Chrome (not Chromium)
-### - SecretAgent contains builded-in a lot of techics to make headless browser undetectabe for bot detectors.
+### - Hero(ex SecretAgent) provide more stable, patched version of Chrome (not Chromium)
+### - Hero(ex SecretAgent) contains builded-in a lot of techics to make headless browser undetectabe for bot detectors.
 >
 #
 
